@@ -1,6 +1,6 @@
-const regexInputbox = document.getElementById("inputted_regex")
+const regexInputBox = document.getElementById("inputted_regex")
 const regexOutput = document.getElementById("highlighted_regex")
 
 regexInputBox.addEventListener("input", () => {
-	regexOutput.textContent = regexInputbox.value;
+	regexOutput.textContent = regexInputBox.value;
 })
