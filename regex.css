@@ -1,0 +1,6 @@
+code#highlighted_regex {
+	background-color: lightgrey;
+	font-family: monospace;
+	display: block;
+	padding: 10px;
+}
