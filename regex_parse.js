@@ -303,14 +303,14 @@ class QuantifierNode extends ASTNode {
 	}
 
 	getPlaintext () {
-		return this.textRepresentation
+		return this.repeatedBlock.getPlaintext() + this.textRepresentation
 	}
 
 	getHumanReadable () {
 		const readableContainer = document.createElement("DIV")
 		const explanatoryNote = document.createElement("P")
 
-		explanatoryNote.textContent = "The" + this.textRepresentation + " at the end matches the following, between " + this.rangeMin + " and " + this.rangeMax + " (inclusive) times"
+		explanatoryNote.textContent = "The " + this.textRepresentation + " at the end matches the following subexpression between " + this.rangeMin + " and " + this.rangeMax + " (inclusive) times"
 		readableContainer.appendChild(explanatoryNote)
 
 		const detailsContainer = document.createElement("DETAILS")
@@ -326,9 +326,8 @@ class QuantifierNode extends ASTNode {
 
 		detailsContainer.appendChild(this.repeatedBlock.getHumanReadable())
 
-		detailsContainer.classList.add("readable-container")
-
-		return detailsContainer
+		readableContainer.classList.add("readable-container")
+		return readableContainer
 	}
 }
 
