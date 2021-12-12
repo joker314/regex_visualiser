@@ -293,7 +293,7 @@ class AlternationNode extends ASTNode {
 			pipeContainer.classList.add("highlighted")
 		})
 
-		pipeContainer.addEventListener("mouseover", () => {
+		pipeContainer.addEventListener("mouseout", () => {
 			leftContainer.classList.remove("underlined")
 			rightContainer.classList.remove("underlined")
 			pipeContainer.classList.remove("highlighted")
