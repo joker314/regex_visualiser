@@ -71,13 +71,13 @@ function parse(regexStr, flags = {ALLOW_IMPLICIT_EMPTY: true, VARIADIC_ALTERNATI
 			} else if (regexStr[i] === ')') {
 				throw new Error("Closing bracket at position " + i + " has no opening bracket")
 			} else if (/[a-zA-Z0-9]/.test(regexStr[i])) { // XXX: choosing not to use case insensitivity, for maintainability
-				concatenatedPart.push(new CharacterNode(i, regexStr[i]))
+				concatenatedParts.push(new CharacterNode(i, regexStr[i]))
 			} else if (regexStr[i] === '+') {
-				concatenatedPart.push(new QuantifierNode(i, i + 1, 1, Infinity))
+				concatenatedParts.push(new QuantifierNode(i, i + 1, 1, Infinity))
 			} else if (regexStr[i] === '*') {
-				concatenatedPart.push(new QuantifierNode(i, i + 1, 0, Infinity))
+				concatenatedParts.push(new QuantifierNode(i, i + 1, 0, Infinity))
 			} else if (regexStr[i] === '?') {
-				concatenatedPart.push(new QuantifierNode(i, i + 1, 0, 1))
+				concatenatedParts.push(new QuantifierNode(i, i + 1, 0, 1))
 			} else if (regexStr[i] === '|') {
 				alternatedParts.push(new ConcatRegionNode(startPos, i, concatenatedParts))
 				concatenatedParts = [] // XXX: can't just use concatenatedParts.length = 0, must create a new object
