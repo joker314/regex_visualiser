@@ -253,6 +253,8 @@ class ConcatRegionNode extends ASTNode {
 			detailsContainer.appendChild(subNode.getHumanReadable())
 		})
 
+		readableContainer.classList.add('readable-container')
+
 		return readableContainer
 	}
 }
@@ -323,6 +325,9 @@ class QuantifierNode extends ASTNode {
 		detailsContainer.open = true
 
 		detailsContainer.appendChild(this.repeatedBlock.getHumanReadable())
+
+		detailsContainer.classList.add("readable-container")
+
 		return detailsContainer
 	}
 }
@@ -362,6 +367,8 @@ class CharacterNode extends ASTNode {
 		explanatoryNote.appendChild(document.createTextNode("Matches the character "))
 		explanatoryNote.appendChild(kbdEl)
 		explanatoryNote.appendChild(document.createTextNode(" literally"))
+
+		explanatoryNote.classList.add("readable-container")
 
 		return explanatoryNote
 	}
@@ -422,7 +429,31 @@ class AlternationNode extends ASTNode {
 					      "expressions:"
 
 		// TODO: just implement as extension of VariadicAlternationNode
-		explanatoryText.textContent += " ((more to follow))"
+		const firstDetails = document.createElement("DETAILS")
+		const firstSummary = document.createElement("SUMMARY")
+		const firstSummaryName = document.createElement("CODE")
+
+		const secondDetails = document.createElement("DETAILS")
+		const secondSummary = document.createElement("SUMMARY")
+		const secondSummaryName = document.createElement("CODE")
+
+		firstDetails.appendChild(firstSummary)
+		firstSummary.appendChild(document.createTextNode("Option 1: "))
+		firstSummary.appendChild(firstSummaryName)
+		firstSummaryName.textContent = this.leftHalf.getPlaintext()
+		firstDetails.appendChild(this.leftHalf.getHumanReadable())
+
+		secondDetails.appendChild(secondSummary)
+		secondSummary.appendChild(document.createTextNode("Option 2: "))
+		secondSummary.appendChild(secondSummaryName)
+		secondSummaryName.textContent = this.rightHalf.getPlaintext()
+		secondDetails.appendChild(this.rightHalf.getHumanReadable())
+
+		readableContainer.appendChild(firstDetails)
+		readableContainer.appendChild(secondDetails)
+
+		readableContainer.classList.add("readable-container")
+
 		return readableContainer
 	}
 }
