@@ -270,6 +270,10 @@ class CharacterNode extends ASTNode {
 	generateHTMLHierarchy () {
 		const textContainer = document.createElement("SPAN")
 		textContainer.textContent = this.matchedChar
+
+		// TODO: refactor all of these to use a single helper function for highlight/dehighlight
+		textContainer.addEventListener("mouseover", () => textContainer.classList.add("highlighted"))
+		textContainer.addEventListener("mouseout", () => textContainer.classList.remove("highlighted"))
 		
 		return textContainer
 	}
