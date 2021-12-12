@@ -50,6 +50,7 @@ function parse(regexStr, flags = {ALLOW_IMPLICIT_EMPTY: true, VARIADIC_ALTERNATI
 	 */
 
 	const parenPositions = findParens(regexStr)
+	return parseSubstr(0, regexStr.length)
 
 	// XXX: Efficiency savings by passing indexes rather than strings
 	function parseSubstr(startPos, endPos) {
