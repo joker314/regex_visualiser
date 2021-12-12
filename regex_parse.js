@@ -225,7 +225,7 @@ class QuantifierNode extends ASTNode {
 		const repeatedBlockSpan = document.createElement("SPAN")
 
 		textRepSpan.textContent = this.textRepresentation
-		repeatedBlockSpan.appendChild(this.repeatedBlock.getHTMLHierarchy())
+		repeatedBlockSpan.appendChild(this.repeatedBlock.generateHTMLHierarchy())
 
 		textRepSpan.addEventListener("mouseover", () => {
 			textRepSpan.classList.add("highlighted")
