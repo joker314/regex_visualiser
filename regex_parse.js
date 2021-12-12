@@ -12,6 +12,7 @@ regexInputBox.addEventListener("input", () => {
 	}
 
 	if (astRoot) {
+		console.log(regexOutput)
 		regexOutput.replaceChildren(astRoot.generateHTMLHierarchy())
 	}
 })
