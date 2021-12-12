@@ -12,7 +12,7 @@ regexInputBox.addEventListener("input", () => {
 	}
 
 	if (astRoot) {
-		console.log(regexOutput)
+		console.log(astRoot)
 		regexOutput.replaceChildren(astRoot.generateHTMLHierarchy())
 	}
 })
@@ -131,7 +131,7 @@ function parse(regexStr, flags = {ALLOW_IMPLICIT_EMPTY: true, VARIADIC_ALTERNATI
 		} else {
 			// So far we have only pushed an alternative when we met a pipe, but the subexpression to the right of the final
 			// pipe should still be added. We will do that here:
-			alternatedParts.push(concatenatedParts[concatenatedParts.length - 1])
+			alternatedParts.push(new ConcatRegionNode(pipePositions[pipePositions.length - 1] + 1, endPos, concatenatedParts))
 
 			// Then, we should check the flags for how to handle chained alternatives
 			if (flags.VARIADIC_ALTERNATIVES) {
@@ -140,7 +140,7 @@ function parse(regexStr, flags = {ALLOW_IMPLICIT_EMPTY: true, VARIADIC_ALTERNATI
 				// We will need to chain (left to right) any alternatives
 				// Borrowing from the functional programming paradigm, we will fold (reduce)
 				// over the alternated parts
-				return alternatedParts.reduceRight((acc, currentPart) => new AlternationNode(currentPart, acc))
+				return alternatedParts.reduceRight((acc, currentPart, i) => new AlternationNode(pipePositions[i], currentPart, acc))
 			}
 		}
 	}
