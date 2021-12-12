@@ -23,10 +23,21 @@ class ASTNode {
 	constructor (startPos, endPos) {
 		this.startPos = startPos
 		this.endPos = endPos
+		this.cachedHumanReadable = null
 	}
 
 	generateHTMLHierarchy () {
 		throw new Error("generateHTMLHierarchy() not implemented by subclass")
+	}
+
+	// Cached version of getHumanReadable - calling twice returns the exact same HTMLElement
+	getHumanReadable () {
+		// TODO: is this too clever?
+		return this.cachedHumanReadable ||= this._getHumanReadable()
+	}
+
+	_getHumanReadable () {
+		throw new Error("_getHumanReadable() not implemented by subclass")
 	}
 }
 
@@ -194,7 +205,7 @@ class ParenNode extends ASTNode {
 		return "(" + this.groupedData.getPlaintext() + ")"
 	}
 
-	getHumanReadable () {
+	_getHumanReadable () {
 		// It would just create clutter to explain that the parentheses do nothing
 		// Their presence changes how data is grouped together - which is presented implicitly, in other ways
 		return this.groupedData.getHumanReadable()
@@ -226,7 +237,7 @@ class ConcatRegionNode extends ASTNode {
 		return this.subNodes.map(subNode => subNode.getPlaintext()).join('')
 	}
 
-	getHumanReadable () {
+	_getHumanReadable () {
 		const readableContainer = document.createElement("DIV")
 		const explanatoryNote = document.createElement("P")
 
@@ -306,7 +317,7 @@ class QuantifierNode extends ASTNode {
 		return this.repeatedBlock.getPlaintext() + this.textRepresentation
 	}
 
-	getHumanReadable () {
+	_getHumanReadable () {
 		const readableContainer = document.createElement("DIV")
 		const explanatoryNote = document.createElement("P")
 
@@ -358,7 +369,7 @@ class CharacterNode extends ASTNode {
 		return this.matchedChar
 	}
 
-	getHumanReadable () {
+	_getHumanReadable () {
 		const explanatoryNote = document.createElement("DIV")
 		const kbdEl = document.createElement("KBD") // TODO: decide whether this matches the semantic meaning of <KBD>
 		kbdEl.textContent = this.matchedChar
@@ -418,7 +429,7 @@ class AlternationNode extends ASTNode {
 		return this.leftHalf.getPlaintext() + "|" + this.rightHalf.getPlaintext()
 	}
 
-	getHumanReadable () {
+	_getHumanReadable () {
 		const readableContainer = document.createElement("DIV")
 		const explanatoryText = document.createElement("P")
 
@@ -503,7 +514,7 @@ class VariadicAlternationNode extends ASTNode {
 		return "((not implemented))"
 	}
 
-	getHumanReadable () {
+	_getHumanReadable () {
 		// TODO
 		return document.createTextNode("((not implemented))")
 	}
