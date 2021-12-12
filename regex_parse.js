@@ -178,11 +178,13 @@ class ParenNode extends ASTNode {
 		function mouseoverCb () {
 			openingParen.classList.add("matching-parens")
 			closingParen.classList.add("matching-parens")
+			this.getHumanReadable().classList.add("readable-selected")
 		}
 
 		function mouseoutCb () {
 			openingParen.classList.remove("matching-parens")
 			closingParen.classList.remove("matching-parens")
+			this.getHumanReadable().classList.remove("readable-selected")
 		}
 
 		openingParen.addEventListener("mouseover", mouseoverCb)
@@ -300,11 +302,13 @@ class QuantifierNode extends ASTNode {
 		textRepSpan.addEventListener("mouseover", () => {
 			textRepSpan.classList.add("highlighted")
 			repeatedBlockSpan.classList.add("underlined")
+			this.getHumanReadable().classList.add("readable-selected")
 		})
 
 		textRepSpan.addEventListener("mouseout", () => {
 			textRepSpan.classList.remove("highlighted")
 			repeatedBlockSpan.classList.remove("underlined")
+			this.getHumanReadable().classList.remove("readable-selected")
 		})
 
 		quantifierContainer.appendChild(repeatedBlockSpan)
@@ -359,8 +363,15 @@ class CharacterNode extends ASTNode {
 		textContainer.textContent = this.matchedChar
 
 		// TODO: refactor all of these to use a single helper function for highlight/dehighlight
-		textContainer.addEventListener("mouseover", () => textContainer.classList.add("highlighted"))
-		textContainer.addEventListener("mouseout", () => textContainer.classList.remove("highlighted"))
+		textContainer.addEventListener("mouseover", () => {
+			textContainer.classList.add("highlighted")
+			this.getHumanReadable().classList.add("readable-selected")
+		})
+
+		textContainer.addEventListener("mouseout", () => {
+			textContainer.classList.remove("highlighted")
+			this.getHumanReadable().classList.remove("readable-selected")
+		})
 		
 		return textContainer
 	}
@@ -410,12 +421,14 @@ class AlternationNode extends ASTNode {
 			leftContainer.classList.add("underlined")
 			rightContainer.classList.add("underlined")
 			pipeContainer.classList.add("highlighted")
+			this.getHumanReadable().classList.add("readable-selected")
 		})
 
 		pipeContainer.addEventListener("mouseout", () => {
 			leftContainer.classList.remove("underlined")
 			rightContainer.classList.remove("underlined")
 			pipeContainer.classList.remove("highlighted")
+			this.getHumanReadable().classList.remove("readable-selected")
 		})
 
 		alternationContainer.appendChild(leftContainer)
@@ -494,11 +507,13 @@ class VariadicAlternationNode extends ASTNode {
 				pipe.addEventListener("mouseover", () => {
 					intermediatePortionContainers.forEach(container => container.classList.add("underlined"))
 					pipeContainers.forEach(pipe => pipe.classList.add("matching-parens"))
+					this.getHumanReadable().classList.add("readable-selected")
 				})
 
 				pipe.addEventListener("mouseout", () => {
 					intermediatePortionContainers.forEach(container => container.classList.remove("underlined"))
 					pipeContainers.forEach(pipe => pipe.classList.remove("matching-parens"))
+					this.getHumanReadable().classList.remove("readable-selected")
 				})
 
 				pipeContainers.push(pipe)
