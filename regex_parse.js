@@ -239,15 +239,15 @@ class ConcatRegionNode extends ASTNode {
 		this.subNodes.forEach(subNode => {
 			const listItem = document.createElement("LI")
 			const detailsContainer = document.createElement("DETAILS")
-			const sectionContainer = document.createElement("SECTION")
-			const sectionName = document.createElement("CODE")
+			const summaryContainer = document.createElement("SUMMARY")
+			const summaryName = document.createElement("CODE")
 			
 			listOfDetails.appendChild(listItem)
 			listItem.appendChild(detailsContainer)
-			detailsContainer.appendChild(sectionContainer)
-			sectionContainer.appendChild(sectionName)
+			detailsContainer.appendChild(summaryContainer)
+			summaryContainer.appendChild(summaryName)
 
-			sectionName.textContent = subNode.getPlaintext()
+			summaryName.textContent = subNode.getPlaintext()
 			detailsContainer.open = true
 
 			detailsContainer.appendChild(subNode.getHumanReadable())
@@ -312,14 +312,14 @@ class QuantifierNode extends ASTNode {
 		readableContainer.appendChild(explanatoryNote)
 
 		const detailsContainer = document.createElement("DETAILS")
-		const sectionContainer = document.createElement("SECTION")
-		const sectionName = document.createElement("CODE")
+		const summaryContainer = document.createElement("SUMMARY")
+		const summaryName = document.createElement("CODE")
 		
 		readableContainer.appendChild(detailsContainer)
-		detailsContainer.appendChild(sectionContainer)
-		sectionContainer.appendChild(sectionName)
+		detailsContainer.appendChild(summaryContainer)
+		summaryContainer.appendChild(summaryName)
 
-		sectionName.textContent = this.repeatedBlock.getPlaintext()
+		summaryName.textContent = this.repeatedBlock.getPlaintext()
 		detailsContainer.open = true
 
 		detailsContainer.appendChild(this.repeatedBlock.getHumanReadable())
