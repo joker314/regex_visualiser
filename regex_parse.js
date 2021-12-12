@@ -235,7 +235,7 @@ class QuantifierNode extends ASTNode {
 
 		textRepSpan.addEventListener("mouseout", () => {
 			textRepSpan.classList.remove("highlighted")
-			textRepSpan.classList.remove("underlined")
+			repeatedBlockSpan.classList.remove("underlined")
 		})
 
 		quantifierContainer.appendChild(repeatedBlockSpan)
