@@ -3,6 +3,7 @@ code#highlighted_regex {
 	font-family: monospace;
 	display: block;
 	padding: 10px;
+	font-size: 30px;
 }
 
 code .highlighted {

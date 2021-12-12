@@ -1,5 +1,6 @@
 const regexInputBox = document.getElementById("inputted_regex")
 const regexOutput = document.getElementById("highlighted_regex")
+const regexHumanReadable = document.getElementById("human_readable")
 
 regexInputBox.addEventListener("input", () => {
 	let astRoot = null
@@ -14,6 +15,7 @@ regexInputBox.addEventListener("input", () => {
 	if (astRoot) {
 		console.log(astRoot)
 		regexOutput.replaceChildren(astRoot.generateHTMLHierarchy())
+		regexHumanReadable.replaceChildren(astRoot.getHumanReadable())
 	}
 })
 
@@ -187,6 +189,16 @@ class ParenNode extends ASTNode {
 
 		return bracketContainer
 	}
+
+	getPlaintext () {
+		return "(" + this.groupedData.getPlaintext() + ")"
+	}
+
+	getHumanReadable () {
+		// It would just create clutter to explain that the parentheses do nothing
+		// Their presence changes how data is grouped together - which is presented implicitly, in other ways
+		return this.groupedData.getHumanReadable()
+	}
 }
 
 class ConcatRegionNode extends ASTNode {
@@ -208,6 +220,37 @@ class ConcatRegionNode extends ASTNode {
 		this.subNodes.forEach(subNode => concatContainer.appendChild(subNode.generateHTMLHierarchy()))
 
 		return concatContainer
+	}
+
+	getPlaintext () {
+		return this.subNodes.map(subNode => subNode.getPlaintext()).join('')
+	}
+
+	getHumanReadable () {
+		const readableContainer = document.createElement("DIV")
+		const explanatoryNote = document.createElement("P")
+
+		readableContainer.appendChild(explanatoryNote)
+		explanatoryNote.textContent = "Each of the following must be matched in sequence"
+
+		const listOfDetails = document.createElement("UL")
+
+		this.subNodes.forEach(subNode => {
+			const listItem = document.createElement("LI")
+			const detailsContainer = document.createElement("DETAILS")
+			const sectionContainer = document.createElement("SECTION")
+			const sectionName = document.createElement("CODE")
+			
+			listOfDetails.appendChild(listItem)
+			listItem.appendChild(detailsContainer)
+			detailsContainer.appendChild(sectionContainer)
+			sectionContainer.appendChild(sectionName)
+
+			sectionName.textContent = subNode.getPlaintext()
+			detailsContainer.open = true
+
+			detailsContainer.appendChild(subNode.getHumanReadable())
+		})
 	}
 }
 
@@ -253,6 +296,31 @@ class QuantifierNode extends ASTNode {
 
 		return quantifierContainer
 	}
+
+	getPlaintext () {
+		return this.textRepresentation
+	}
+
+	getHumanReadable () {
+		const readableContainer = document.createElement("DIV")
+		const explanatoryNote = document.createElement("P")
+
+		explanatoryNote.textContent = "The" + this.textRepresentation + " at the end matches the following, between " + this.rangeMin + " and " + this.rangeMax + " (inclusive) times"
+		readableContainer.appendChild(explanatoryNote)
+
+		const detailsContainer = document.createElement("DETAILS")
+		const sectionContainer = document.createElement("SECTION")
+		const sectionName = document.createElement("CODE")
+		
+		readableContainer.appendChild(detailsContainer)
+		detailsContainer.appendChild(sectionContainer)
+		sectionContainer.appendChild(sectionName)
+
+		sectionName.textContent = this.repeatedBlock.getPlaintext()
+		detailsContainer.open = true
+
+		detailsContainer.appendChild(this.repeatedBlock.getHumanReadable())
+	}
 }
 
 class CharacterNode extends ASTNode {
@@ -276,6 +344,20 @@ class CharacterNode extends ASTNode {
 		textContainer.addEventListener("mouseout", () => textContainer.classList.remove("highlighted"))
 		
 		return textContainer
+	}
+
+	getPlaintext () {
+		return this.matchedChar
+	}
+
+	getHumanReadable () {
+		const explanatoryNote = document.createElement("DIV")
+		const kbdEl = document.createElement("KBD") // TODO: decide whether this matches the semantic meaning of <KBD>
+		kbdEl.textContent = this.matchedChar
+
+		explanatoryNote.appendChild(document.createTextNode("Matches the character "))
+		explanatoryNote.appendChild(kbdEl)
+		explanatoryNote.appendChild(document.createTextNode(" literally"))
 	}
 }
 
@@ -319,6 +401,23 @@ class AlternationNode extends ASTNode {
 
 		return alternationContainer
 	}
+
+	getPlaintext () {
+		return this.leftHalf.getPlaintext() + "|" + this.rightHalf.getPlaintext()
+	}
+
+	getHumanReadable () {
+		const readableContainer = document.createElement("DIV")
+		const explanatoryText = document.createElement("P")
+
+		readableContainer.appendChild(explanatoryText)
+		explanatoryText.textContent = "To match this regular expression, you must " +
+					      "match either one of the following two regular " +
+					      "expressions:"
+
+		// TODO: just implement as extension of VariadicAlternationNode
+		explanatoryText.textContent += " ((more to follow))"
+	}
 }
 
 class VariadicAlternationNode extends ASTNode {
@@ -360,5 +459,15 @@ class VariadicAlternationNode extends ASTNode {
 
 			alternationContainer.appendChild(intermediatePortionContainers[i])
 		}
+	}
+
+	getPlaintext () {
+		// TODO
+		return "((not implemented))"
+	}
+
+	getHumanReadable () {
+		// TODO
+		return document.createTextNode("((not implemented))")
 	}
 }
