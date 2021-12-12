@@ -194,7 +194,7 @@ class ConcatRegionNode extends ASTNode {
 
 	generateHTMLHierarchy () {
 		const concatContainer = document.createElement("SPAN")
-		this.subNodes.forEach(subNode => concatContainer.appendChild(subNode))
+		this.subNodes.forEach(subNode => concatContainer.appendChild(subNode.generateHTMLHierarchy()))
 
 		return concatContainer
 	}
