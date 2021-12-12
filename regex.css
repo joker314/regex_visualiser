@@ -4,3 +4,16 @@ code#highlighted_regex {
 	display: block;
 	padding: 10px;
 }
+
+code .highlighted {
+	color: orange;
+}
+
+code .underlined {
+	text-decoration: underline;
+	color: blue;
+}
+
+code .matching-parens {
+	color: green;
+}
