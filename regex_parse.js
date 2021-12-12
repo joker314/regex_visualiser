@@ -2,14 +2,28 @@ const regexInputBox = document.getElementById("inputted_regex")
 const regexOutput = document.getElementById("highlighted_regex")
 
 regexInputBox.addEventListener("input", () => {
-	regexOutput.textContent = regexInputBox.value;
-	console.log(parse(regexInputBox.value))
+	let astRoot = null
+
+	try {
+		astRoot = parse(regexInputBox.value))
+	} catch (e) {
+		// TODO: better error handling
+		regexOutput.textContent = regexInputBox.value + "\n\n" + e.message
+	}
+
+	if (astRoot) {
+		regexOutput.replaceChildren(astRoot.generateHTMLHierarchy())
+	}
 })
 
 class ASTNode {
 	constructor (startPos, endPos) {
 		this.startPos = startPos
 		this.endPos = endPos
+	}
+
+	generateHTMLHierarchy () {
+		throw new Error("generateHTMLHierarchy() not implemented by subclass")
 	}
 }
 
@@ -96,7 +110,7 @@ function parse(regexStr, flags = {ALLOW_IMPLICIT_EMPTY: true, VARIADIC_ALTERNATI
 				}
 
 				// Pop off the last unit of concatenation, and then push back on the quantified version
-				concatenatedParts.push(new QuantifierNode(i, i + 1, lowerBound, upperBound, concatenatedParts.pop()))
+				concatenatedParts.push(new QuantifierNode(i, i + 1, lowerBound, upperBound, regexStr[i], concatenatedParts.pop()))
 			} else if (regexStr[i] === '|') {
 				alternatedParts.push(new ConcatRegionNode(startPos, i, concatenatedParts))
 				concatenatedParts = [] // XXX: can't just use concatenatedParts.length = 0, must create a new object
@@ -137,6 +151,31 @@ class ParenNode extends ASTNode {
 		super(startPos, endPos)
 		this.groupedData = groupedData
 	}
+
+	generateHTMLHierarchy () {
+		const bracketContainer = document.createElement("SPAN")
+		const openingParen = document.createElement("SPAN")
+		const closingParen = document.createElement("SPAN")
+		
+		openingParen.addEventListener("mouseover", () => {
+			openingParen.classList.add("matching-parens")
+			closingParen.classList.add("matching-parens")
+		})
+
+		closingParen.addEventListener("mouseout", () => {
+			openingParen.classList.remove("matching-parens")
+			closingParen.classList.remove("matching-parens")
+		})
+
+		openingParen.textContent = "("
+		closingParen.textContent = ")"
+
+		bracketContainer.appendChild(openingParen)
+		bracketContainer.appendChild(this.groupedData.generateHTMLHierarchy())
+		bracketContainer.appendChild(closingParen)
+
+		return bracketContainer
+	}
 }
 
 class ConcatRegionNode extends ASTNode {
@@ -152,6 +191,13 @@ class ConcatRegionNode extends ASTNode {
 		super(startPos, endPos)
 		this.subNodes = subNodes
 	}
+
+	generateHTMLHierarchy () {
+		const concatContainer = document.createElement("SPAN")
+		this.subNodes.forEach(subNode => concatContainer.appendChild(subNode))
+
+		return concatContainer
+	}
 }
 
 class QuantifierNode extends ASTNode {
@@ -164,12 +210,37 @@ class QuantifierNode extends ASTNode {
 	 * The substring of indices in the interval [startPos, endPos)
 	 * which describes a quantification between [minimum,maximum].
 	 */
-	constructor (startPos, endPos, minimum, maximum, repeatedBlock) {
+	constructor (startPos, endPos, minimum, maximum, textRepresentation, repeatedBlock) {
 		super(startPos, endPos)
 
 		this.rangeMin = minimum
 		this.rangeMax = maximum
+		this.textRepresentation = textRepresentation
 		this.repeatedBlock = repeatedBlock
+	}
+
+	generateHTMLHierarchy () {
+		const quantifierContainer = document.createElement("SPAN")
+		const textRepSpan = document.createElement("SPAN")
+		const repeatedBlockSpan = document.createElement("SPAN")
+
+		textRepSpan.textContent = this.textRepresentation
+		repeatedBlockSpan.appendChild(this.repeatedBlock.getHTMLHierarchy())
+
+		textRepSpan.addEventListener("mouseover", () => {
+			textRepSpan.classList.add("highlighted")
+			repeatedBlockSpan.classList.add("underlined")
+		})
+
+		textRepSpan.addEventListener("mouseout", () => {
+			textRepSpan.classList.remove("highlighted")
+			textRepSpan.classList.remove("underlined")
+		})
+
+		quantifierContainer.appendChild(repeatedBlockSpan)
+		quantifierContainer.appendChild(textRepSpan)
+
+		return quantifierContainer
 	}
 }
 
@@ -184,6 +255,13 @@ class CharacterNode extends ASTNode {
 		
 		this.matchedChar = matchedChar
 	}
+
+	generateHTMLHierarchy () {
+		const textContainer = document.createElement("SPAN")
+		textContainer.textContent = matchedChar
+		
+		return textContainer
+	}
 }
 
 class AlternationNode extends ASTNode {
@@ -197,6 +275,35 @@ class AlternationNode extends ASTNode {
 		this.leftHalf = leftHalf
 		this.rightHalf = rightHalf
 	}
+
+	generateHTMLHierarchy () {
+		const alternationContainer = document.createElement("SPAN")
+		const leftContainer = document.createElement("SPAN")
+		const rightContainer = document.createElement("SPAN")
+		const pipeContainer = document.createElement("SPAN")
+
+		leftContainer.appendChild(this.leftHalf.generateHTMLHierarchy())
+		pipeContainer.textContent = "|"
+		rightContainer.appendChild(this.rightHalf.generateHTMLHierarchy())
+
+		pipeContainer.addEventListener("mouseover", () => {
+			leftContainer.classList.add("underlined")
+			rightContainer.classList.add("underlined")
+			pipeContainer.classList.add("highlighted")
+		})
+
+		pipeContainer.addEventListener("mouseover", () => {
+			leftContainer.classList.remove("underlined")
+			rightContainer.classList.remove("underlined")
+			pipeContainer.classList.remove("highlighted")
+		})
+
+		alternationContainer.appendChild(leftContainer)
+		alternationContainer.appendChild(pipeContainer)
+		alternationContainer.appendChild(rightContainer)
+
+		return alternationContainer
+	}
 }
 
 class VariadicAlternationNode extends ASTNode {
@@ -204,5 +311,39 @@ class VariadicAlternationNode extends ASTNode {
 	constructor (pipePositions, intermediatePortions) {
 		this.pipePositions = pipePositions
 		this.intermediatePortions = intermediatePortions
+	}
+
+	generateHTMLHierarchy () {
+		const alternationContainer = document.createElement("SPAN")
+		const intermediatePortionContainers = this.intermediatePortions.map(portion => {
+			const element = document.createElement("SPAN")
+			element.appendChild(portion.generateHTMLHierarchy())
+			return element
+		})
+
+		const pipeContainers = []
+
+		for (let i = 0; i < intermediatePortionContainers; i++) {
+			if (i > 0) {
+				// Place a pipe before each container (except for the very first one)
+				const pipe = document.createElement("SPAN")
+				pipe.textContent = "|"
+
+				pipe.addEventListener("mouseover", () => {
+					intermediatePortionContainers.forEach(container => container.classList.add("underlined"))
+					pipeContainers.forEach(pipe => pipe.classList.add("matching-parens"))
+				})
+
+				pipe.addEventListener("mouseout", () => {
+					intermediatePortionContainers.forEach(container => container.classList.remove("underlined"))
+					pipeContainers.forEach(pipe => pipe.classList.remove("matching-parens"))
+				})
+
+				pipeContainers.push(pipe)
+				alternationContainer.push(pipe)
+			}
+
+			alternationContainer.appendChild(intermediatePortionContainers[i])
+		}
 	}
 }
