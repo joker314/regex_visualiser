@@ -234,6 +234,7 @@ class ConcatRegionNode extends ASTNode {
 		explanatoryNote.textContent = "Each of the following must be matched in sequence"
 
 		const listOfDetails = document.createElement("UL")
+		readableContainer.appendChild(listOfDetails)
 
 		this.subNodes.forEach(subNode => {
 			const listItem = document.createElement("LI")
