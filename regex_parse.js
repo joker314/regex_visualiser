@@ -72,12 +72,31 @@ function parse(regexStr, flags = {ALLOW_IMPLICIT_EMPTY: true, VARIADIC_ALTERNATI
 				throw new Error("Closing bracket at position " + i + " has no opening bracket")
 			} else if (/[a-zA-Z0-9]/.test(regexStr[i])) { // XXX: choosing not to use case insensitivity, for maintainability
 				concatenatedParts.push(new CharacterNode(i, regexStr[i]))
-			} else if (regexStr[i] === '+') {
-				concatenatedParts.push(new QuantifierNode(i, i + 1, 1, Infinity))
-			} else if (regexStr[i] === '*') {
-				concatenatedParts.push(new QuantifierNode(i, i + 1, 0, Infinity))
-			} else if (regexStr[i] === '?') {
-				concatenatedParts.push(new QuantifierNode(i, i + 1, 0, 1))
+			} else if ('+*?'.includes(regexStr[i])) {
+				let lowerBound = null
+				let upperBound = null
+
+				switch (regexStr[i]) {
+					case "+":
+						lowerBound = 1
+						upperBound = Infinity
+						break
+					case "*":
+						lowerBound = 0
+						upperBound = Infinity
+						break
+					case "?":
+						lowerBound = 0
+						upperBound = 1
+						break
+				}
+
+				if (concatenatedParts.length === 0) {
+					throw new Error("Quantifier at position " + i + " is not quantifying over anything")
+				}
+
+				// Pop off the last unit of concatenation, and then push back on the quantified version
+				concatenatedParts.push(new QuantifierNode(i, i + 1, lowerBound, upperBound, concatenatedParts.pop()))
 			} else if (regexStr[i] === '|') {
 				alternatedParts.push(new ConcatRegionNode(startPos, i, concatenatedParts))
 				concatenatedParts = [] // XXX: can't just use concatenatedParts.length = 0, must create a new object
@@ -145,11 +164,12 @@ class QuantifierNode extends ASTNode {
 	 * The substring of indices in the interval [startPos, endPos)
 	 * which describes a quantification between [minimum,maximum].
 	 */
-	constructor (startPos, endPos, minimum, maximum) {
+	constructor (startPos, endPos, minimum, maximum, repeatedBlock) {
 		super(startPos, endPos)
 
 		this.rangeMin = minimum
 		this.rangeMax = maximum
+		this.repeatedBlock = repeatedBlock
 	}
 }
 
