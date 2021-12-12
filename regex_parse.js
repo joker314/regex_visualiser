@@ -251,6 +251,8 @@ class ConcatRegionNode extends ASTNode {
 
 			detailsContainer.appendChild(subNode.getHumanReadable())
 		})
+
+		return readableContainer
 	}
 }
 
@@ -320,6 +322,7 @@ class QuantifierNode extends ASTNode {
 		detailsContainer.open = true
 
 		detailsContainer.appendChild(this.repeatedBlock.getHumanReadable())
+		return detailsContainer
 	}
 }
 
@@ -358,6 +361,8 @@ class CharacterNode extends ASTNode {
 		explanatoryNote.appendChild(document.createTextNode("Matches the character "))
 		explanatoryNote.appendChild(kbdEl)
 		explanatoryNote.appendChild(document.createTextNode(" literally"))
+
+		return explanatoryNote
 	}
 }
 
@@ -417,6 +422,7 @@ class AlternationNode extends ASTNode {
 
 		// TODO: just implement as extension of VariadicAlternationNode
 		explanatoryText.textContent += " ((more to follow))"
+		return readableContainer
 	}
 }
 
