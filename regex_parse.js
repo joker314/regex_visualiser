@@ -60,7 +60,7 @@ function parse(regexStr, flags = {ALLOW_IMPLICIT_EMPTY: true, VARIADIC_ALTERNATI
 		const pipePositions = []
 
 		for (let i = startPos; i < endPos; i++) {
-			if (substr[i] === '(') {
+			if (regexStr[i] === '(') {
 				// 1. Parse whatever is inside the brackets
 				// 2. Wrap it in a ParenNode
 				// 3. Jump to after the closing bracket to continue parsing the concatenation region
@@ -68,21 +68,21 @@ function parse(regexStr, flags = {ALLOW_IMPLICIT_EMPTY: true, VARIADIC_ALTERNATI
 				concatenatedPart.push(new ParenNode(i, parenPositions[i] + 1, innerParse))
 				i = parenPositions[i]
 				continue
-			} else if (substr[i] === ')') {
+			} else if (regexStr[i] === ')') {
 				throw new Error("Closing bracket at position " + i + " has no opening bracket")
-			} else if (/[a-zA-Z0-9]/.test(substr[i])) { // XXX: choosing not to use case insensitivity, for maintainability
-				concatenatedPart.push(new CharacterNode(i, substr[i]))
-			} else if (substr[i] === '+') {
+			} else if (/[a-zA-Z0-9]/.test(regexStr[i])) { // XXX: choosing not to use case insensitivity, for maintainability
+				concatenatedPart.push(new CharacterNode(i, regexStr[i]))
+			} else if (regexStr[i] === '+') {
 				concatenatedPart.push(new QuantifierNode(i, i + 1, 1, Infinity))
-			} else if (substr[i] === '*') {
+			} else if (regexStr[i] === '*') {
 				concatenatedPart.push(new QuantifierNode(i, i + 1, 0, Infinity))
-			} else if (substr[i] === '?') {
+			} else if (regexStr[i] === '?') {
 				concatenatedPart.push(new QuantifierNode(i, i + 1, 0, 1))
-			} else if (substr[i] === '|') {
+			} else if (regexStr[i] === '|') {
 				alternatedParts.push(new ConcatRegionNode(startPos, i, concatenatedParts))
 				concatenatedParts = [] // XXX: can't just use concatenatedParts.length = 0, must create a new object
 			} else {
-				throw new Error("Unknown character " + substr[i] + " at position " + i)
+				throw new Error("Unknown character " + regexStr[i] + " at position " + i)
 			}
 		}
 
@@ -125,7 +125,7 @@ class ConcatRegionNode extends ASTNode {
 	 * Long strings of just concatenation can be thought of as
 	 * just a single region of concatenation. For example, abcd
 	 * would be a concatenation region. The purpose of this node is
-	 * to glue together a substring of the regex so as to be able to pass
+	 * to glue together a subing of the regex so as to be able to pass
 	 * it as the left/right halves of alternation etc.
 	 */
 
