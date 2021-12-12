@@ -84,7 +84,7 @@ function parse(regexStr, flags = {ALLOW_IMPLICIT_EMPTY: true, VARIADIC_ALTERNATI
 				// 2. Wrap it in a ParenNode
 				// 3. Jump to after the closing bracket to continue parsing the concatenation region
 				const innerParse = parseSubstr(i + 1, parenPositions[i])
-				concatenatedPart.push(new ParenNode(i, parenPositions[i] + 1, innerParse))
+				concatenatedParts.push(new ParenNode(i, parenPositions[i] + 1, innerParse))
 				i = parenPositions[i]
 				continue
 			} else if (regexStr[i] === ')') {
