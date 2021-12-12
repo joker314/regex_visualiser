@@ -34,9 +34,9 @@ function findParens (str) {
 	const stackOfIndexes = []
 
 	for (let i = 0; i < str.length; i++) {
-		if (i === '(') {
+		if (str[i] === '(') {
 			stackOfIndexes.push(i)
-		} else if (i === ')') {
+		} else if (str[i] === ')') {
 			if (stackOfIndexes.length === 0) {
 				throw new Error("Unmatched closing parenthesis at " + i)
 			}
