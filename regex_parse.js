@@ -162,15 +162,21 @@ class ParenNode extends ASTNode {
 		const openingParen = document.createElement("SPAN")
 		const closingParen = document.createElement("SPAN")
 		
-		openingParen.addEventListener("mouseover", () => {
+		function mouseoverCb () {
 			openingParen.classList.add("matching-parens")
 			closingParen.classList.add("matching-parens")
-		})
+		}
 
-		closingParen.addEventListener("mouseout", () => {
+		function mouseoutCb () {
 			openingParen.classList.remove("matching-parens")
 			closingParen.classList.remove("matching-parens")
-		})
+		}
+
+		openingParen.addEventListener("mouseover", mouseoverCb)
+		closingParen.addEventListener("mouseover", mouseoverCb)
+		
+		openingParen.addEventListener("mouseout", mouseoutCb)
+		closingParen.addEventListener("mouseout", mouseoutCb)
 
 		openingParen.textContent = "("
 		closingParen.textContent = ")"
