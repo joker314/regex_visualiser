@@ -5,7 +5,7 @@ regexInputBox.addEventListener("input", () => {
 	let astRoot = null
 
 	try {
-		astRoot = parse(regexInputBox.value))
+		astRoot = parse(regexInputBox.value)
 	} catch (e) {
 		// TODO: better error handling
 		regexOutput.textContent = regexInputBox.value + "\n\n" + e.message
@@ -258,7 +258,7 @@ class CharacterNode extends ASTNode {
 
 	generateHTMLHierarchy () {
 		const textContainer = document.createElement("SPAN")
-		textContainer.textContent = matchedChar
+		textContainer.textContent = this.matchedChar
 		
 		return textContainer
 	}
