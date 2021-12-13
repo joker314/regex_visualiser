@@ -49,6 +49,12 @@ class NFA {
         }
     }
     
+    eliminateNullStates () {
+        this.stateSet.forEach(state => {
+            state.
+        })
+    }
+    
     // Called when the input has been exhausted
     finish () {
         return this.currentStates.any(currentState => currentState.isAcceptingState))
