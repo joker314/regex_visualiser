@@ -13,8 +13,10 @@
 class NFA {
     constructor (startState, stateSet, alphabet, isDFA = false) {
         this.startState = startState
-        this.stateSet = stateSet
+        this.stateSet = new Set(stateSet)
+        this.alphabet = new Set(alphabet)
         this.reset() // go to the start state
+        this.handleNullTransitions()
         
         if (!this.startState.isStartState) {
             throw new Error("Start state is not marked as a start state in NFA")
@@ -26,7 +28,25 @@ class NFA {
     }
     
     readSymbol (inputSymbol) {
+        if (!this.alphabet.has(inputSymbol) {
+            throw new Error("Symbol", inputSymbol, "not in alphabet")
+        }
+        
         this.currentStates = this.currentStates.flatMap(currentState => currentState.getNextStates(inputSymbol))
+        this.handleNullTransitions()
+    }
+    
+    handleNullTransitions () {
+        const stateQueue = [...this.currentStates]
+        
+        while (let thisState = stateQueue.pop()) {
+            thisState.getNextStates("").forEach(nextState => {
+                if (!this.currentStates.has(nextState)) {
+                    this.currentStates.add(nextState)
+                    stateQueue.push(nextState)
+                }
+            })
+        }
     }
     
     // Called when the input has been exhausted
@@ -35,7 +55,7 @@ class NFA {
     }
     
     reset () {
-        this.currentStates = [this.startState]
+        this.currentStates = new Set(this.startState)
     }
 }
 
