@@ -30,6 +30,10 @@ class ASTNode {
 		throw new Error("generateHTMLHierarchy() not implemented by subclass")
 	}
 
+	clone () {
+		throw new Error("clone() not implemented by subclass")
+	}
+
 	// Cached version of getHumanReadable - calling twice returns the exact same HTMLElement
 	getHumanReadable () {
 		// TODO: is this too clever?
@@ -38,6 +42,17 @@ class ASTNode {
 
 	_getHumanReadable () {
 		throw new Error("_getHumanReadable() not implemented by subclass")
+	}
+
+	/**
+	 * The Computer Science (CS) version of a node should be a separate node
+	 * which would work in a Computer Science regular expression. This is a
+	 * regular expression whose only quantifier is a Kleene star and where
+	 * epsilon is an allowed symbol.
+	 */
+	makeCSNode () {
+		// Unless overriden by a subclass, just clone this node
+		return this.clone()
 	}
 }
 
@@ -170,6 +185,10 @@ class ParenNode extends ASTNode {
 		this.groupedData = groupedData
 	}
 
+	clone () {
+		return new ParenNode(this.startPos, this.endPos, this.groupedData)
+	}
+
 	generateHTMLHierarchy () {
 		const bracketContainer = document.createElement("SPAN")
 		const openingParen = document.createElement("SPAN")
@@ -226,6 +245,10 @@ class ConcatRegionNode extends ASTNode {
 	constructor (startPos, endPos, subNodes) {
 		super(startPos, endPos)
 		this.subNodes = subNodes
+	}
+
+	clone () {
+		return new ConcatRegionNode(this.startPos, this.endPos, this.subNodes)
 	}
 
 	generateHTMLHierarchy () {
@@ -289,6 +312,10 @@ class QuantifierNode extends ASTNode {
 		this.rangeMax = maximum
 		this.textRepresentation = textRepresentation
 		this.repeatedBlock = repeatedBlock
+	}
+
+	clone () {
+		return new QuantifierNode(this.startPos, this.endPos, this.rangeMin, this.rangeMax, this.textRepresentation, this.repeatedBlock)
 	}
 
 	generateHTMLHierarchy () {
@@ -358,6 +385,10 @@ class CharacterNode extends ASTNode {
 		this.matchedChar = matchedChar
 	}
 
+	clone () {
+		return new CharacterNode(this.startPos, this.matchedChar)
+	}
+
 	generateHTMLHierarchy () {
 		const textContainer = document.createElement("SPAN")
 		textContainer.textContent = this.matchedChar
@@ -405,6 +436,10 @@ class AlternationNode extends ASTNode {
 
 		this.leftHalf = leftHalf
 		this.rightHalf = rightHalf
+	}
+
+	clone () {
+		return new AlternationNode(this.startPos, this.leftHalf, this.rightHalf)
 	}
 
 	generateHTMLHierarchy () {
@@ -486,6 +521,10 @@ class VariadicAlternationNode extends ASTNode {
 	constructor (pipePositions, intermediatePortions) {
 		this.pipePositions = pipePositions
 		this.intermediatePortions = intermediatePortions
+	}
+
+	clone () {
+		return new VariadicAlternationNode(this.pipePositions, this.intermediatePortions)
 	}
 
 	generateHTMLHierarchy () {

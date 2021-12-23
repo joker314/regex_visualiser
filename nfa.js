@@ -24,11 +24,20 @@ class NFA {
     }
     
     registerTransition (fromState, inputSymbol, toState) {
-        fromState.transitions[inputSymbol] ||= new State() // if not yet defined, create it
+        fromState.transitions[inputSymbol] ||= new Set() // if not yet defined, create it
+		fromState.transitions[inputSymbol].add(toState)
     }
     
     unregisterTransition (fromState, inputSymbol, toState) {
-
+		if (fromState.transitions.hasOwnProperty(inputSymbol)) {
+			fromState.transitions[inputSymbol].remove(toState)
+			
+			// If this causes there to be no more transitions across this symbol
+			// from that state, then remove the entry in the state's transition table
+			if (fromState.transitions[inputSymbol].size === 0) {
+				delete fromState.transitions[inputSymbol]
+			}
+		}
     }
     
     readSymbol (inputSymbol) {
@@ -56,9 +65,12 @@ class NFA {
     // If A --x--> B --(null)--> C, then to remove the null transition
     // we must create a transition A --x--> C, and then eliminate the transition
     // B --(null)--> C
-    // We will do this by depth first search
+    // We will do this by depth first search, seeded with the start state, and implemented
+	// iteratively. 
     eliminateNullTransitions () {
-        
+        const exploredStates = new Set()
+		const stateQueue = []
+
     }
     
     // Called when the input has been exhausted
