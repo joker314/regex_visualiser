@@ -21,7 +21,7 @@ class GraphDrawingEngine {
 	}
 
 	render (timestamp) {
-		
+		console.log("Debugging - this is", this)	
 		this.graphNodes.forEach(node => {
 			node.render(timestamp)
 		})
