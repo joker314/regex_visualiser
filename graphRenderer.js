@@ -90,7 +90,7 @@ class GraphEdge {
 	}
 
 	render (engine) {
-		engine.drawLine([this.startNode, this.endNode].map(node => [node.x, node.y])
+		engine.drawLine([this.startNode, this.endNode].map(node => [node.x, node.y]))
 	}
 }
 

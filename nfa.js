@@ -76,7 +76,7 @@ class NFA {
     
     // Called when the input has been exhausted
     finish () {
-        return this.currentStates.any(currentState => currentState.isAcceptingState))
+        return this.currentStates.any(currentState => currentState.isAcceptingState)
     }
     
     reset () {
