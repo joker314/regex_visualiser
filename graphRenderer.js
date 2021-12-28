@@ -50,8 +50,8 @@ class GraphDrawingEngine {
 	}
 
 	drawLine (startPos, endPos) {
-		const [startX, startY] = this.scalePosition(*startPos)
-		const [endX, endY] = this.scalePosition(*endPos)
+		const [startX, startY] = this.scalePosition(...startPos)
+		const [endX, endY] = this.scalePosition(...endPos)
 
 		this.context2d.beginPath()
 		this.context2d.strokeStyle = "red"

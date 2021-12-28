@@ -41,7 +41,7 @@ class NFA {
     }
     
     readSymbol (inputSymbol) {
-        if (!this.alphabet.has(inputSymbol) {
+        if (!this.alphabet.has(inputSymbol)) {
             throw new Error("Symbol", inputSymbol, "not in alphabet")
         }
         
