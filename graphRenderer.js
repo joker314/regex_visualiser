@@ -22,11 +22,11 @@ class GraphDrawingEngine {
 
 	render (timestamp) {
 		this.graphNodes.forEach(node => {
-			node.render(timestamp)
+			node.render(this, timestamp)
 		})
 
 		this.graphEdges.forEach(edge => {
-			edge.render(timestamp)
+			edge.render(this, timestamp)
 		})
 
 		if (this.isRendering) {
@@ -78,7 +78,7 @@ class GraphNode {
 		this.y = y
 	}
 
-	render (engine) {
+	render (engine, timestamp) {
 		engine.drawCircle(this.x, this.y, 30, "orange") 
 	}
 
@@ -97,7 +97,7 @@ class GraphEdge {
 		this.endNode = endNode
 	}
 
-	render (engine) {
+	render (engine, timestamp) {
 		engine.drawLine([this.startNode, this.endNode].map(node => [node.x, node.y]))
 	}
 }
