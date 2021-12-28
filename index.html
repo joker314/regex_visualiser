@@ -5,6 +5,9 @@
 	</head>
 
 	<body>
+		<canvas id="nfa-picture">
+			Non-deterministic finite state automaton interactive picture
+		</canvas>
 		<code id="highlighted_regex"></code>
 		<p>/<input id="inputted_regex">/</p>
 		<div id="human_readable">
@@ -13,5 +16,14 @@
 		
 		<script src="./nfa.js"></script>
 		<script src="./regex_parse.js"></script>
+		<script src="./graphRenderer.js"></script>
+
+		<script>
+			const engine = new GraphDrawingEngine(
+				document.getElementById("nfa-picture"),
+				[new GraphNode(20, 20)],
+				[]
+			)
+		</script>
 	</body>
 </html>
