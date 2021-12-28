@@ -29,6 +29,10 @@ class GraphDrawingEngine {
 		this.graphEdges.forEach(edge => {
 			edge.render(timestamp)
 		})
+
+		if (this.isRendering) {
+			window.requestAnimationFrame(this.render)
+		}
 	}
 
 	scalePosition (x, y) {
@@ -58,6 +62,11 @@ class GraphDrawingEngine {
 		this.context2d.moveTo(startX, startY)
 		this.context2d.lineTo(endX, endY)
 		this.stroke()
+	}
+
+	startRendering () {
+		this.isRendering = true
+		window.requestAnimationFrame(this.render)
 	}
 }
 
