@@ -21,7 +21,6 @@ class GraphDrawingEngine {
 	}
 
 	render (timestamp) {
-		console.log("Debugging - this is", this)	
 		this.graphNodes.forEach(node => {
 			node.render(timestamp)
 		})
@@ -31,7 +30,7 @@ class GraphDrawingEngine {
 		})
 
 		if (this.isRendering) {
-			window.requestAnimationFrame(this.render)
+			window.requestAnimationFrame(this.render.bind(this))
 		}
 	}
 
@@ -66,7 +65,7 @@ class GraphDrawingEngine {
 
 	startRendering () {
 		this.isRendering = true
-		window.requestAnimationFrame(this.render)
+		window.requestAnimationFrame(this.render.bind(this))
 	}
 }
 
