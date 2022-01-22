@@ -70,7 +70,7 @@ class NFA {
 	// iteratively. 
     eliminateNullTransitions () {
         const exploredStates = new Set()
-		const stateQueue = []
+	const stateQueue = []
 
     }
     
@@ -81,6 +81,37 @@ class NFA {
     
     reset () {
         this.currentStates = new Set(this.startState)
+    }
+
+    createGraph (height, width) {
+		// We use BFS for finding the coordinates of where to place the nodes
+		// We already have a list of all the nodes so there's no need to traverse them to find them
+		// NOTE: all NFAs that our program deals with are connected, so every node can be found by BFS
+		// starting from the start node - but we will check at the end anyway just in case
+		
+		// First, partitition the graph into layers
+		const visitedSet = new Set()
+		const allLayers = []
+
+		let currentLayer = [this.startState]
+
+		while (currentLayer.length) {
+			allLayers.append(currentLayer)
+			let nextLayer = []
+
+			for (let node of currentLayer) {
+				visitedSet.add(node)
+				nextLayer.push(node)
+			}
+
+			currentLayer = nextLayer
+		}
+
+		// Next, calculate the best coordinates and instantiate a GraphNode
+		// XXX: this will use maths! which is something u can write abou
+		for (let layer of allLayers) {
+			
+		}
     }
 }
 
