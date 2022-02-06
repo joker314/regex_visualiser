@@ -382,20 +382,50 @@ class QuantifierNode extends ASTNode {
 	// We can keep the Kleene star quantification, but we must rewrite the + quantification
 	makeCSNode () {
 		// TODO: startpos, endpos not being used and should be removed after survey
-		if (this.rangeMin === 0 && this.rangeMax === Infinity) {
-			return this.clone()
-		} else if (this.rangeMax === Infinity) {
-			// We will break down something like U{3,infinity} into
-			// 1. inlinedRepetition --> UUU
-			// 2. kleeneStar ---> U*
-			// so the resulting expanded form is (UUU)U*
-			const inlinedRepetitions = Array(this.rangeMin) // create an array of this.rangeMin empty slots
-										.fill(null) // replace the empty slots with dummy values so they can be mapped over
-										.map(() => this.repeatedBlock.clone()) // create a NEW clone of the repeated block each time
-
-			const kleeneStar = new QuantifierNode(startPos, endPos, 0, Infinity, this.repeatedBlock)
-			r 
+	
+		// Helper function to repeat a block a certain number of times
+		// TODO: make static method
+		function repeatTimes(block, n) {
+			return Array(n) // create an array of n empty slots
+				.fill(null) // replace the empty slots with dummy values so they can be .map()ed over
+				.map(() => this.repeatedBlock.clone()) // create a NEW clone of the block each time - so
+													   // changes to one won't affect the other
 		}
+
+		// We will break down something like U{3,infinity} into
+		// 1. inlinedRepetition --> UUU
+		// 2. kleeneStar ---> U*
+		// so the resulting expanded form is (UUU)U*
+
+		// First let's create the finite prefix of Us. For example, if we need between 4 and 50 U's,
+		// then this line creates the first 4 Us.
+		const inlinedRepetitions = repeatTimes(this.repeatedBlock, this.rangeMin)
+		
+		// Next let's finish off the expanded regular expression with the suffix. There are two cases: if the upper bound is finite, we need
+		// to create a collection of alternatives (<empty>|U|UU|UUU|UUUU|UUUUU|...). But if the upper bound is infinity, we
+		// can use the Kleene star U* to accomplish the same thing
+		let suffix = null
+
+		if (this.rangeMax === Infinity) {
+			suffix = new QuantifierNode(this.startPos, this.endPos, 0, Infinity, "*", this.repeatedBlock.clone())
+		} else {
+			const alternatives = []
+
+			for (let repititionCount = this.rangeMin; repititionCount <= this.rangeMax; repititionCount++) {
+				if (repititionCount === 0) {
+					// TODO: use epsilon instead
+					alternatives.push(new CharacterNode(this.startPos, ''))	
+				} else {
+					alternatives.push(repeatTimes(this.repeatedBlock, repititionCount))
+				}
+			}
+
+			// TODO: no position info
+			// TODO: abstract this pattern out
+			suffix = alternatives.reduceRight((acc, currentPart, i) => new AlternationNode(-1, currentPart, acc))
+		}
+		
+		return new ConcatRegionNode(this.startNode, this.endNode, [...inlinedRepititions, suffix])
 	}
 }
 
