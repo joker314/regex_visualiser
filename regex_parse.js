@@ -378,6 +378,25 @@ class QuantifierNode extends ASTNode {
 		readableContainer.classList.add("readable-container")
 		return readableContainer
 	}
+
+	// We can keep the Kleene star quantification, but we must rewrite the + quantification
+	makeCSNode () {
+		// TODO: startpos, endpos not being used and should be removed after survey
+		if (this.rangeMin === 0 && this.rangeMax === Infinity) {
+			return this.clone()
+		} else if (this.rangeMax === Infinity) {
+			// We will break down something like U{3,infinity} into
+			// 1. inlinedRepetition --> UUU
+			// 2. kleeneStar ---> U*
+			// so the resulting expanded form is (UUU)U*
+			const inlinedRepetitions = Array(this.rangeMin) // create an array of this.rangeMin empty slots
+										.fill(null) // replace the empty slots with dummy values so they can be mapped over
+										.map(() => this.repeatedBlock.clone()) // create a NEW clone of the repeated block each time
+
+			const kleeneStar = new QuantifierNode(startPos, endPos, 0, Infinity, this.repeatedBlock)
+			r 
+		}
+	}
 }
 
 class CharacterNode extends ASTNode {
