@@ -1,3 +1,8 @@
+function enumerate (arr) {
+	
+}
+
+
 /**
  * A non-deterministic finite state automaton is a kind
  * of finite directed graph which represents the computational
@@ -109,9 +114,40 @@ class NFA {
 
 		// Next, calculate the best coordinates and instantiate a GraphNode
 		// XXX: this will use maths! which is something u can write abou
-		for (let layer of allLayers) {
-			
+
+		const edgeObjects = []
+		const nodeObjects = []
+
+		const horizontalNumberOfNodes = allLayers.length
+		const xInterval = width / (horizontalNumberOfNodes + 2)
+
+		// Construct the nodes in the grap
+		for (let [horizontalIndex, currentLayer] of enumerate(allLayers)) {
+			const verticalNumberOfNodes = currentLayer.length
+			const yInterval = height / (verticalNumberOfNodes + 2)
+
+			for (let [verticalIndex, node] of currentLayer) {
+				const xCoord = xInterval * (1 + horizontalIndex)
+				const yCoord = yInterval * (1 + verticalIndex)
+				// TODO: textual label
+				node.graphNode = new GraphNode(xCoord, yCoord)
+
+				nodeObjects.push(node.graphNode)
+			}
 		}
+
+		// Construct the edges in the graph
+		// Note that although this looks like a nested loop,
+		// this is actually an O(n + m) algorithm where n is the number
+		// of nodes and m the number of edges. See TODO in documented design.
+		allLayers.flat().forEach(node => {
+			for (let [transitionSymbol, childNode] of Object.entries(node.transitions)) {
+				// TODO: textual label
+				edgeObjects.push(new GraphEdge(node.graphNode, childNode.graphNode))
+			}
+		})
+
+		return [nodeObjects, edgeObjects]
     }
 }
 

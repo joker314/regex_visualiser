@@ -1,6 +1,10 @@
 const regexInputBox = document.getElementById("inputted_regex")
 const regexOutput = document.getElementById("highlighted_regex")
 const regexHumanReadable = document.getElementById("human_readable")
+const nfaPicture = document.getElementById("nfa-picture")
+
+let currentNFA = null
+let currentEngine = null
 
 regexInputBox.addEventListener("input", () => {
 	let astRoot = null
@@ -16,6 +20,9 @@ regexInputBox.addEventListener("input", () => {
 		console.log(astRoot)
 		regexOutput.replaceChildren(astRoot.generateHTMLHierarchy())
 		regexHumanReadable.replaceChildren(astRoot.getHumanReadable())
+		
+		currentNFA = new NFA()
+		currentEngine = new GraphDrawingEngine(nfaPicture, ...this.rap())
 	}
 })
 
