@@ -64,15 +64,19 @@ class NFA {
     
     registerTransition (fromState, inputSymbol, toState) {
         fromState.transitions[inputSymbol] ||= new Set() // if not yet defined, create it
-		fromState.transitions[inputSymbol].add(toState)
 		
-		toState.indegree++
+		if (!fromState.transitions[inputSymbol].has(toState)) {
+			toState.indegree++
+			fromState.transitions[inputSymbol].add(toState)
+		}
     }
     
     unregisterTransition (fromState, inputSymbol, toState) {
 		if (fromState.transitions.hasOwnProperty(inputSymbol)) {
-			fromState.transitions[inputSymbol].delete(toState)
-			toState.indegree--
+			if (fromState.transitions[inputSymbol].has(toState)) {
+				toState.indegree--
+				fromState.transitions[inputSymbol].delete(toState)
+			}
 			
 			// If this causes there to be no more transitions across this symbol
 			// from that state, then remove the entry in the state's transition table
@@ -121,11 +125,15 @@ class NFA {
     }
 	
 	cleanupState (stateToDelete) {
-		// Can't delete a state if it has non-zero indegree, or if it's the start state
-		if (stateToDelete.indegree > 0 || this.startState === stateToDelete) {
+		// There is no evidence yet that the passed state is unreachable. It might be part of a longer
+		// chain like w in u --> v --> w. But in this case, cleanupState(u) should be called first, and
+		// this will recursively induce each of v and w to be cleaned up eventually.
+		if (stateToDelete.indegree !== 0 || stateToDelete.isStartState) {
 			return
 		}
 		
+		// Since this state is unreachable, the transitions eminating from it will never be followed and
+		// so can be removed
 		Object.entries(stateToDelete.transitions).forEach(([transitionSymbol, childStates]) => {
 			for (let childState of childStates) {
 				this.unregisterTransition(stateToDelete, transitionSymbol, childState)
@@ -138,6 +146,34 @@ class NFA {
 		this.stateSet.delete(stateToDelete)
 	}
     
+	/**
+	 * Take all the transitions out of otherState and add them to targetState's transitions.
+	 *
+	 * This is intended to be called only when otherState and targetState are deemed to be equivalent states (any input will lead
+	 * to the same outcome if you start in either state) - and for this reason, otherState and targetState must either both be
+	 * accepting states or both be non-accepting states. (Since otherwise they would not behave equivalently on an empty input).
+	 *
+	 * IMPORTANT: it is the responsibility of the caller to finally disconnect otherState from targetState. This method only moves all
+	 * the transitions across.
+	 */
+	mergeStates (otherState, targetState) {
+		if (otherState.isAcceptingState !== targetState.isAcceptingState) {
+			throw new Error("Tried to merge two states that can't possibly be equivalent, since one of them is accepting but the other isn't")
+		}
+		
+		for (let [transitionSymbol, otherChildren] of Object.entries(otherState.transitions)) {
+			for (let otherChild of otherChildren) {
+				// Create a connection directly between targetState and otherChild, bypassing otherState
+				// but first, we want to carefully handle the case were this transition is a self-transition
+				// from otherState to itself. In that case, since we're assuming targetState and otherState are equivalent
+				// we can replace otherChild with targetState. This is important because otherwise it's possible that even after the
+				// merge there would still be a transition from targetState to otherState that would be dangerous to remove.
+				const fixedOtherChild = (otherChild === otherState) ? targetState : otherChild
+				this.registerTransition(targetState, transitionSymbol, fixedOtherChild)
+			}
+		}
+	}
+	
     // If A --x--> B --(null)--> C, then to remove the null transition
     // we must create a transition A --x--> C, and then eliminate the transition
     // B --(null)--> C
@@ -150,6 +186,7 @@ class NFA {
 			let nullChildren; // the set of states which are just an epsilon-transition away from the current state
 			
 			while ((nullChildren = state.getNextStates("")).size) {
+				/**
 				console.log("null children at the moment are", Array.from(nullChildren))
 				for (let nullChild of nullChildren) {
 					// Create a connection directly between 'state' and each child of 'nullChild'.
@@ -165,6 +202,13 @@ class NFA {
 					})
 					
 					// Now that we have all the connections, we don't need a  null transition to nullChild anymore.
+					this.unregisterTransition(state, "", nullChild)
+				}
+				*/
+				
+				for (let nullChild of nullChildren) {
+					console.log("Merging", nullChild, "and", state)
+					this.mergeStates(nullChild, state)
 					this.unregisterTransition(state, "", nullChild)
 				}
 			}
@@ -259,12 +303,12 @@ class NFA {
 }
 
 class NFAState {
-    constructor (humanName, isStartState, isAcceptingState, transitions = {}) {
+    constructor (humanName, isStartState, isAcceptingState, transitions = {}, indegree = 0) {
         this.humanName = humanName
         this.isStartState = isStartState
         this.isAcceptingState = isAcceptingState
         this.transitions = transitions
-		this.indegree = 0
+		this.indegree = indegree
     }
     
     getNextStates (inputSymbol) {

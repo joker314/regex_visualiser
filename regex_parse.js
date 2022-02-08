@@ -510,6 +510,9 @@ class QuantifierNode extends ASTNode {
 				resultingNFA.registerTransition(acceptingState, "", resultingNFA.startState)
 			})
 		
+		// Make the starting state an accepting state, to allow matching the empty strings
+		resultingNFA.startState.isAcceptingState = true
+		
 		resultingNFA.reset()
 		return resultingNFA
 	}
