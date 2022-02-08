@@ -80,6 +80,19 @@ class NFA {
 				delete fromState.transitions[inputSymbol]
 			}
 		}
+		
+		// The only way to get to a state is to start at the startState and then move along
+		// the transitions. This means that every reachable state must either be the startState
+		// or must have an incoming transition. Since this state is now neither, we can safely delete
+		// both the state and its outgoing transitions.
+		//
+		// Note that this can lead to recursive calls because by removing these outgoing transitions, we may
+		// decrement some other state's indegree down to 0. Intuitively, this means that if we have a transition
+		// A --x--> B, and A is unreachable (so we want to remove it), and there is no other transition into B,
+		// then B must also be unreachable and we should delete it too.
+		if (toState.indegree === 0 && toState.isStartState) {
+			this.cleanupState(toState)
+		}
     }
     
     readSymbol (inputSymbol) {
@@ -108,53 +121,51 @@ class NFA {
             })
         }
     }
+	
+	cleanupState (stateToDelete) {
+		// Can't delete a state if it has non-zero indegree, or if it's the start state
+		if (stateToDelete.indegree > 0 || this.startState === stateToDelete) {
+			return
+		}
+		
+		Object.entries(stateToDelete.transitions).forEach(([transitionSymbol, childStates]) => {
+			for (let childState of childStates) {
+				unregisterTransition(stateToDelete, transitionSymbol, childState)
+			}
+		})
+		
+		// Now that this state has both zero outdegree and zero indegree, it is safe to remove it completely
+		// from the NFA object, so it will be garabage collected soon (as long as the programmer has not created
+		// a reference to it somewhere else)
+		this.stateSet.remove(stateToDelete)
+	}
     
     // If A --x--> B --(null)--> C, then to remove the null transition
     // we must create a transition A --x--> C, and then eliminate the transition
     // B --(null)--> C
-    // We will do this by depth first search, seeded with the start state, and implemented
-	// iteratively. 
     eliminateNullTransitions () {
-        const seenStates = new Set([this.startState])
-		const statesToExplore = [this.startState] // TODO: could be a stack
-
-		while (statesToExplore.length) {
-			const currentState = statesToExplore.pop()
+		// Note that although this.stateSet is mutated by the callback function provided, this is okay
+		// because 23.2.3.6 of the ECMA specification guarantees that new items added to the set will still
+		// be traversed.
+		this.stateSet.forEach(state => {
+			let nullChildren; // the set of states which are just an epsilon-transition away from the current state
 			
-			// It might be that while we were waiting to explore this state, we have eliminated
-			// it
-			if (!this.stateSet.has(currentState)) {
-				continue
-			}
-			
-			for (let nullChild of currentState.getNextStates("")) {
-				unregisterTransition(fromState, "", nullChild)
-				
-				if (nullChild.indegree === 0 && !nullChild.startState) {
-					// The nullChild has no parent. There is no way to reach it from the start state.
-					// So it is safe to remove it from the NFA. Note that nullChild might have some
-					// outdegree, so we need to unregister each outgoing connection to correctly decrement
-					// the indegree of nullChild's children.
-					for (let [transitionSymbol, nullChildChildren] of Object.entries(nullChild.transitions)) {
-						for (let nullChildChild of nullChildChildren) {
-							this.unregisterTransition(nullChild, transitionSymbol, nullChildChild)
-						}
-					}
+			while ((nullChildren = state.getNextStates("")).size) {
+				for (let nullChild of nullChildren) {
+					// Create a connection directly between 'state' and each child of 'nullChild'.
+					// We will refer to each child of nullChild with the name 'nullChildChild'
+					// It is okay if the transitionSymbol is itself a null transition, because this is
+					// all being done in a while loop and will continue until there are no more null transitions
+					// from this state.
+					Object.entries(nullChild.transitions).forEach(([transitionSymbol, nullChildChild]) => {
+						this.registerTransition(state, transitionSymbol, nullChildChild)
+					})
 					
-					this.stateSet.remove(nullChild)
-				} else {
-					// We can now continue the DFS by pushing all of the children onto the stack
-					for (let [transitionSymbol, childStates] of Object.entries(currentState.transitions)) {
-						Array.from(childStates)
-							.filter(childState => !seenStates.has(childState)) // don't push the same thing onto the stack twice
-							.forEach(childState => {
-								statesToExplore.push(childState) // schedule this state for the DFS to look at
-								seenStates.add(childState) // make sure this state never gets pushed on again
-							})
-					}
+					// Now that we have all the connections, we don't need a  null transition to nullChild anymore.
+					this.unregisterTransition(state, "", nullChild)
 				}
 			}
-		}
+		})
     }
     
     // Determines whether or not the NFA is in an accepting state. Usually called once all

@@ -131,7 +131,14 @@ class GraphEdge {
 	}
 
 	render (engine, timestamp) {
-		engine.drawLine(...[this.startNode, this.endNode].map(node => [node.x, node.y]))
+		const coordinates = [this.startNode, this.endNode].map(node => [node.x, node.y])
+		
+		if (this.endNode.x < this.startNode.x) {
+			engine.drawUpwardCurve(...coordinates)
+		} else {
+			engine.drawDownwardCurve(...coordinates)
+		}
+		
 		engine.drawText(
 			average(this.startNode.x, this.endNode.x),
 			average(this.startNode.y, this.endNode.y),
