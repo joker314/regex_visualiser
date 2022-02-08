@@ -21,7 +21,6 @@ class NFA {
         this.stateSet = new Set(stateSet)
         this.alphabet = new Set(alphabet)
         this.reset() // go to the start state
-        this.handleNullTransitions()
         
         if (!this.startState.isStartState) {
             throw new Error("Start state is not marked as a start state in NFA")
@@ -63,6 +62,7 @@ class NFA {
 		let thisState;
         while (thisState = stateQueue.pop()) {
             thisState.getNextStates("").forEach(nextState => {
+				console.log("Null transition to", nextState)
                 if (!this.currentStates.has(nextState)) {
                     this.currentStates.add(nextState)
                     stateQueue.push(nextState)
@@ -82,13 +82,17 @@ class NFA {
 
     }
     
-    // Called when the input has been exhausted
+    // Determines whether or not the NFA is in an accepting state. Usually called once all
+	// the input has been consumed -- but doesn't have to be.
     finish () {
-        return this.currentStates.any(currentState => currentState.isAcceptingState)
+        return Array.from(this.currentStates).any(currentState => currentState.isAcceptingState)
     }
     
     reset () {
         this.currentStates = new Set([this.startState])
+		
+		// TODO: only run this when needed
+		this.handleNullTransitions()
     }
 
     createGraph (height, width) {
