@@ -25,7 +25,7 @@ regexInputBox.addEventListener("input", () => {
 		
 		currentNFA = currentAST.makeNFA()
 		console.log("NFA", currentNFA)
-		//currentEngine = new GraphDrawingEngine(nfaPicture, ...this.rap())
+		currentEngine = new GraphDrawingEngine(nfaPicture, ...currentNFA.createGraph(nfaPicture.height, nfaPicture.width))
 	}
 })
 
