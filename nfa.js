@@ -71,7 +71,7 @@ class NFA {
     
     unregisterTransition (fromState, inputSymbol, toState) {
 		if (fromState.transitions.hasOwnProperty(inputSymbol)) {
-			fromState.transitions[inputSymbol].remove(toState)
+			fromState.transitions[inputSymbol].delete(toState)
 			toState.indegree--
 			
 			// If this causes there to be no more transitions across this symbol
