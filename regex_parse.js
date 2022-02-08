@@ -495,12 +495,15 @@ class QuantifierNode extends ASTNode {
 		
 		// Construct the NFA of the repeated block, and then create cycles by attaching a null transition from the accepting
 		// states back to the starting state.
+		//
+		// Initially, resultingNFA is just the repeatedBlock's NFA. But it will be modified in-place so as to contain the necessary
+		// cycles.
 		const resultingNFA = this.repeatedBlock.makeNFA()
 		
 		Array.from(resultingNFA.stateSet)
 			.filter(state => state.isAcceptingState)
 			.forEach(acceptingState => {
-				registerTransition(acceptingState, "", resultingNFA.startState)
+				resultingNFA.registerTransition(acceptingState, "", resultingNFA.startState)
 			})
 		
 		return resultingNFA
