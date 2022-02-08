@@ -3,6 +3,7 @@ const regexOutput = document.getElementById("highlighted_regex")
 const regexHumanReadable = document.getElementById("human_readable")
 const nfaPicture = document.getElementById("nfa-picture")
 
+let currentAST = null
 let currentNFA = null
 let currentEngine = null
 
@@ -18,11 +19,13 @@ regexInputBox.addEventListener("input", () => {
 
 	if (astRoot) {
 		console.log(astRoot)
+		currentAST = astRoot
 		regexOutput.replaceChildren(astRoot.generateHTMLHierarchy())
 		regexHumanReadable.replaceChildren(astRoot.getHumanReadable())
 		
-		currentNFA = new NFA()
-		currentEngine = new GraphDrawingEngine(nfaPicture, ...this.rap())
+		currentNFA = currentAST.makeNFA()
+		console.log("NFA", currentNFA)
+		//currentEngine = new GraphDrawingEngine(nfaPicture, ...this.rap())
 	}
 })
 
@@ -49,6 +52,10 @@ class ASTNode {
 
 	_getHumanReadable () {
 		throw new Error("_getHumanReadable() not implemented by subclass")
+	}
+
+	makeNFA () {
+		throw new Error("makeNFA() not implemented by subclass")
 	}
 
 	/**
@@ -238,6 +245,10 @@ class ParenNode extends ASTNode {
 		// Their presence changes how data is grouped together - which is presented implicitly, in other ways
 		return this.groupedData.getHumanReadable()
 	}
+
+	makeNFA () {	
+		return this.groupedData.makeNFA()
+	}
 }
 
 class ConcatRegionNode extends ASTNode {
@@ -299,6 +310,55 @@ class ConcatRegionNode extends ASTNode {
 		readableContainer.classList.add('readable-container')
 
 		return readableContainer
+	}
+	
+	/* We just construct a sequence of (two or more) NFAs, and join them together
+	 *
+	 * X --- Y      A --- B
+	 *   --- Z        --- C
+	 *   --- W        --- D
+	 *
+	 * The above two NFAs can be joined together by adding a null transition from
+	 * Y to A, from Z to A, and from W to A. This null transition can be eliminated once
+	 * the NFA has been constructed, see NFA.prototype.eliminateNullTransitions
+	 */
+	makeNFA () {
+		// Note that the below algorithm mutates all of the NFAs for efficiency.
+		// But all we would need to do to resolve this is to clone them.
+		
+		// XXX: use of map-reduce technique!
+		return this.subNodes
+			.map(astNode => astNode.makeNFA())
+			.reduce((accumulatedNFA, currentNFA) => {
+				// We now need to combine the two NFAs.
+				// This involves taking all the accepting states of the
+				// accumulated NFA and creating a transition between them
+				// and the start state of currentNFA.
+				accumulatedNFA.states
+					.filter(state => state.isAcceptingState)
+					.forEach(acceptingState => {
+						accumulatedNFA.registerTransition(acceptingState, "", currentNFA.startState)
+						
+						// The accepting states of accumulatedNFA should be downgraded
+						// to just ordinary states (since currentNFA's accepting states
+						// will be used instead).
+						acceptingState.isAcceptingState = false
+					})
+				
+				// Similarly, the start state of currentNFA
+				// should be downgraded to a normal state (because accumulatedNFA's start
+				// state will be used instead)
+				currentNFA.startState.isStartState = false
+				
+				// All the states from currentNFA need to be registered with accumulatedNFA - since
+				// accumulatedNFA is taking ownership of them. Similarly for the alphabet.
+				currentNFA.stateSet.forEach(state => accumulatedNFA.stateSet.add(state))
+				currentNFA.alphabet.forEach(character => accumulatedNFA.alphabet.add(character))
+				
+				// We've now appended currentNFA to accumulatedNFA, which means currentNFA is invalid (it doesn't have a start state)
+				// and accumulatedNFA has been mutated to contain the states from both NFAs. So that's the one we should return.
+				return accumulatedNFA
+			})
 	}
 }
 
@@ -427,6 +487,24 @@ class QuantifierNode extends ASTNode {
 		
 		return new ConcatRegionNode(this.startNode, this.endNode, [...inlinedRepititions, suffix])
 	}
+	
+	makeNFA () {
+		if (this.rangeMin !== 0 || this.rangeMax !== Infinity) {
+			return this.makeCSNode()
+		}
+		
+		// Construct the NFA of the repeated block, and then create cycles by attaching a null transition from the accepting
+		// states back to the starting state.
+		const resultingNFA = this.repeatedBlock.makeNFA()
+		
+		resultingNFA.stateSet
+			.filter(state => state.isAcceptingState)
+			.forEach(acceptingState => {
+				registerTransition(acceptingState, "", resultingNFA.startState)
+			})
+		
+		return resultingNFA
+	}
 }
 
 class CharacterNode extends ASTNode {
@@ -479,6 +557,18 @@ class CharacterNode extends ASTNode {
 		explanatoryNote.classList.add("readable-container")
 
 		return explanatoryNote
+	}
+	
+	makeNFA () {
+		// The associated NFA of a single character is two nodes -- the start state,
+		// and the accepting state. There is just one transition, which is the character.
+		const startState = new NFAState(null, true, false)
+		const acceptingState = new NFAState(null, false, true)
+		// TODO: decide on alphabet
+		const resultingNFA = new NFA(startState, [startState, acceptingState], [this.matchedChar])
+		resultingNFA.registerTransition(startState, this.matchedChar, acceptingState)
+		
+		return resultingNFA
 	}
 }
 
@@ -569,6 +659,34 @@ class AlternationNode extends ASTNode {
 		readableContainer.classList.add("readable-container")
 
 		return readableContainer
+	}
+	
+	makeNFA () {
+		/**
+		 * In order to give the option of starting at either leftHalf's starting state
+		 * or leftHalf's starting state, we create a new starting node which has two null
+		 * transitions, one to each of the two other starting states. (This means those stop
+		 * being start states in favour of this new one).
+		 */
+		 // XXX: make sure eliminating null transitions works even for starting states as this is an edge case
+		 
+		 const newStartingState = new NFAState(null, true, false)
+		 const leftNFA = this.leftHalf.makeNFA()
+		 const rightNFA = this.rightHalf.makeNFA()
+		 
+		 // This essentially computes the set union of the two sets
+		 const newAlphabet = [...leftNFA.alphabet, ...rightNFA.alphabet]
+		 const newStateSet = [...leftNFA.stateSet, ...rightNFA.stateSet]
+		 
+		 const resultingNFA = new NFA(newStartingState, newStateSet, newAlphabet)
+		 resultingNFA.registerTransition(newStartingState, "", leftNFA.startState)
+		 resultingNFA.registerTransition(newStartingState, "", rightNFA.startState)
+		 
+		 // Remove the two starting states since newStartingState is now the starting state of the combined NFA
+		 leftNFA.startState = false
+		 rightNFA.startState = false
+		 
+		 return resultingNFA
 	}
 }
 
