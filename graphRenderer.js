@@ -55,6 +55,7 @@ class GraphDrawingEngine {
 	}
 
 	drawLine (startPos, endPos) {
+		console.log("Drawing line between", startPos, endPos)
 		const [startX, startY] = this.scalePosition(...startPos)
 		const [endX, endY] = this.scalePosition(...endPos)
 
@@ -62,7 +63,7 @@ class GraphDrawingEngine {
 		this.context2d.strokeStyle = "red"
 		this.context2d.moveTo(startX, startY)
 		this.context2d.lineTo(endX, endY)
-		this.stroke()
+		this.context2d.stroke()
 	}
 
 	startRendering () {
@@ -100,7 +101,7 @@ class GraphEdge {
 	}
 
 	render (engine, timestamp) {
-		engine.drawLine([this.startNode, this.endNode].map(node => [node.x, node.y]))
+		engine.drawLine(...[this.startNode, this.endNode].map(node => [node.x, node.y]))
 	}
 }
 
