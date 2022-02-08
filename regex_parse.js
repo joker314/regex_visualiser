@@ -448,8 +448,8 @@ class QuantifierNode extends ASTNode {
 		function repeatTimes(block, n) {
 			return Array(n) // create an array of n empty slots
 				.fill(null) // replace the empty slots with dummy values so they can be .map()ed over
-				.map(() => this.repeatedBlock.clone()) // create a NEW clone of the block each time - so
-													   // changes to one won't affect the other
+				.map(() => block.clone()) // create a NEW clone of the block each time - so
+										  // changes to one won't affect the other
 		}
 
 		// We will break down something like U{3,infinity} into
