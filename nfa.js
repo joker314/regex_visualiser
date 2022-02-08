@@ -85,7 +85,7 @@ class NFA {
     }
     
     reset () {
-        this.currentStates = new Set(this.startState)
+        this.currentStates = new Set([this.startState])
     }
 
     createGraph (height, width) {
