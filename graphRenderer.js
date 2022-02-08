@@ -1,3 +1,8 @@
+// TODO: move to a util Function
+function average(a, b) {
+	return (a + b) / 2
+}
+
 /**
  * Can be used to render arbitrary graphs using a force-directed technique
  */
@@ -53,16 +58,33 @@ class GraphDrawingEngine {
 		this.context2d.arc(newX, newY, newR, 0, 2 * Math.PI)
 		this.context2d.fill()
 	}
-
-	drawLine (startPos, endPos) {
+	
+	drawOffsetCurve (startPos, endPos, verticalOffset) {
 		const [startX, startY] = this.scalePosition(...startPos)
 		const [endX, endY] = this.scalePosition(...endPos)
-
+		
+		const offsetControlPoint = [average(startX, endX), average(startY, endY) + verticalOffset]
+		
 		this.context2d.beginPath()
 		this.context2d.strokeStyle = "red"
 		this.context2d.moveTo(startX, startY)
-		this.context2d.lineTo(endX, endY)
+		
+		// Using the same control point twice reduces to a quadratic Bezier curve
+		// TODO: include proof in documented design?
+		this.context2d.bezierCurveTo(...offsetControlPoint, ...offsetControlPoint, endX, endY)
 		this.context2d.stroke()
+	}
+	
+	drawLine (startPos, endPos) {
+		this.drawOffsetCurve(startPos, endPos, 0)
+	}
+	
+	drawUpwardCurve (startPos, endPos) {
+		return this.drawOffsetCurve(startPos, endPos, 10)
+	}
+	
+	drawDownwardCurve (startPos, endPos) {
+		return this.drawOffsetCurve(startPos, endPos, -10)
 	}
 	
 	// TODO: scale the font width e.g. binary search?
@@ -110,12 +132,6 @@ class GraphEdge {
 
 	render (engine, timestamp) {
 		engine.drawLine(...[this.startNode, this.endNode].map(node => [node.x, node.y]))
-		
-		// TODO: move to a util Function
-		function average(a, b) {
-			return (a + b) / 2
-		}
-		
 		engine.drawText(
 			average(this.startNode.x, this.endNode.x),
 			average(this.startNode.y, this.endNode.y),
