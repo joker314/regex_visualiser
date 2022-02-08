@@ -51,7 +51,8 @@ class NFA {
         }
         
 		// Cast to and from set in order to allow for .flatMap, which is only defined for arrays
-        this.currentStates = new Set(Array.from(this.currentStates).flatMap(currentState => currentState.getNextStates(inputSymbol)))
+		// TODO: break up line - it's too long
+        this.currentStates = new Set(Array.from(this.currentStates).flatMap(currentState => Array.from(currentState.getNextStates(inputSymbol))))
         this.handleNullTransitions()
     }
     
