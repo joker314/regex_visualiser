@@ -166,6 +166,11 @@ class NFA {
 	 * the transitions across.
 	 */
 	mergeStates (otherState, targetState) {
+		// Validate to make sure we're not trying to merge a state into itself
+		if (otherState === targetState) {
+			return
+		}
+		
 		// Part of the merging process is merging the fact that this is an accepting state
 		if (otherState.isAcceptingState) {
 			targetState.isAcceptingState = true
@@ -209,7 +214,39 @@ class NFA {
 			}
 		})
     }
-    
+	
+	/**
+	 * Make sure that the entry in every transition is a set of size exactly 1.
+	 * If currently the sets are bigger, we merge them.
+	 */
+    makeDFA () {
+		this.stateSet.forEach(state => {
+			let dirty = true
+			
+			while (dirty) {
+				dirty = false
+				
+				Object.entries(state.transitions).forEach(([transitionSymbol, childStates]) => {
+					if (childStates.size > 1) {
+						dirty = true
+						
+						// If `state` has a transition into itself, we would prefer to merge into that. But in any other
+						// case, we will pick an arbitrary state to merge into - perhaps the first one.
+						const mergeTarget = childStates.has(state) ? state : childStates.values().next().value
+
+						// The merge method will do validation to skip over self-merges, so we don't need to check that here
+						childStates.forEach(childState => {
+							if (childState !== mergeTarget) {
+								this.mergeStates(childState, mergeTarget)
+								this.unregisterTransition(state, transitionSymbol, childState)
+							}
+						})
+					}
+				})
+			}
+		})
+	}
+	
     // Determines whether or not the NFA is in an accepting state. Usually called once all
 	// the input has been consumed -- but doesn't have to be.
     finish () {
