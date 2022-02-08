@@ -65,11 +65,14 @@ class NFA {
     registerTransition (fromState, inputSymbol, toState) {
         fromState.transitions[inputSymbol] ||= new Set() // if not yet defined, create it
 		fromState.transitions[inputSymbol].add(toState)
+		
+		toState.indegree++
     }
     
     unregisterTransition (fromState, inputSymbol, toState) {
 		if (fromState.transitions.hasOwnProperty(inputSymbol)) {
 			fromState.transitions[inputSymbol].remove(toState)
+			toState.indegree--
 			
 			// If this causes there to be no more transitions across this symbol
 			// from that state, then remove the entry in the state's transition table
@@ -112,9 +115,46 @@ class NFA {
     // We will do this by depth first search, seeded with the start state, and implemented
 	// iteratively. 
     eliminateNullTransitions () {
-        const exploredStates = new Set()
-	const stateQueue = []
+        const seenStates = new Set([this.startState])
+		const statesToExplore = [this.startState] // TODO: could be a stack
 
+		while (statesToExplore.length) {
+			const currentState = statesToExplore.pop()
+			
+			// It might be that while we were waiting to explore this state, we have eliminated
+			// it
+			if (!this.stateSet.has(currentState)) {
+				continue
+			}
+			
+			for (let nullChild of currentState.getNextStates("")) {
+				unregisterTransition(fromState, "", nullChild)
+				
+				if (nullChild.indegree === 0 && !nullChild.startState) {
+					// The nullChild has no parent. There is no way to reach it from the start state.
+					// So it is safe to remove it from the NFA. Note that nullChild might have some
+					// outdegree, so we need to unregister each outgoing connection to correctly decrement
+					// the indegree of nullChild's children.
+					for (let [transitionSymbol, nullChildChildren] of Object.entries(nullChild.transitions)) {
+						for (let nullChildChild of nullChildChildren) {
+							this.unregisterTransition(nullChild, transitionSymbol, nullChildChild)
+						}
+					}
+					
+					this.stateSet.remove(nullChild)
+				} else {
+					// We can now continue the DFS by pushing all of the children onto the stack
+					for (let [transitionSymbol, childStates] of Object.entries(currentState.transitions)) {
+						Array.from(childStates)
+							.filter(childState => !seenStates.has(childState)) // don't push the same thing onto the stack twice
+							.forEach(childState => {
+								statesToExplore.push(childState) // schedule this state for the DFS to look at
+								seenStates.add(childState) // make sure this state never gets pushed on again
+							})
+					}
+				}
+			}
+		}
     }
     
     // Determines whether or not the NFA is in an accepting state. Usually called once all
@@ -210,7 +250,7 @@ class NFAState {
         this.isStartState = isStartState
         this.isAcceptingState = isAcceptingState
         this.transitions = transitions
-		console.log("Transitions set to", transitions)
+		this.indegree = 0
     }
     
     getNextStates (inputSymbol) {
