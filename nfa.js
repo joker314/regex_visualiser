@@ -108,7 +108,7 @@ class NFA {
 		let currentLayer = [this.startState]
 
 		while (currentLayer.length) {
-			allLayers.append(currentLayer)
+			allLayers.push(currentLayer)
 			let nextLayer = []
 
 			for (let node of currentLayer) {
