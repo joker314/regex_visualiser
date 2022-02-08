@@ -490,7 +490,7 @@ class QuantifierNode extends ASTNode {
 	
 	makeNFA () {
 		if (this.rangeMin !== 0 || this.rangeMax !== Infinity) {
-			return this.makeCSNode()
+			return this.makeCSNode().makeNFA()
 		}
 		
 		// Construct the NFA of the repeated block, and then create cycles by attaching a null transition from the accepting
