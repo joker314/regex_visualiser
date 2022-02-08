@@ -334,7 +334,7 @@ class ConcatRegionNode extends ASTNode {
 				// This involves taking all the accepting states of the
 				// accumulated NFA and creating a transition between them
 				// and the start state of currentNFA.
-				accumulatedNFA.stateSet
+				Array.from(accumulatedNFA.stateSet)
 					.filter(state => state.isAcceptingState)
 					.forEach(acceptingState => {
 						accumulatedNFA.registerTransition(acceptingState, "", currentNFA.startState)
@@ -497,7 +497,7 @@ class QuantifierNode extends ASTNode {
 		// states back to the starting state.
 		const resultingNFA = this.repeatedBlock.makeNFA()
 		
-		resultingNFA.stateSet
+		Array.from(resultingNFA.stateSet)
 			.filter(state => state.isAcceptingState)
 			.forEach(acceptingState => {
 				registerTransition(acceptingState, "", resultingNFA.startState)
