@@ -105,13 +105,16 @@ class GraphDrawingEngine {
  * Represents a node
  */
 class GraphNode {
-	constructor (x, y, label = "") {
+	constructor (x, y, color = "orange", label = "") {
 		this.x = x
 		this.y = y
+		this.color = color
+		this.label = label
+		// TODO: this.label unused
 	}
 
 	render (engine, timestamp) {
-		engine.drawCircle(this.x, this.y, 30, "orange") 
+		engine.drawCircle(this.x, this.y, 30, this.color)
 	}
 
 	onMouseover () {
