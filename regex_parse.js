@@ -685,7 +685,7 @@ class AlternationNode extends ASTNode {
 		 
 		 // This essentially computes the set union of the two sets
 		 const newAlphabet = [...leftNFA.alphabet, ...rightNFA.alphabet]
-		 const newStateSet = [...leftNFA.stateSet, ...rightNFA.stateSet]
+		 const newStateSet = [...leftNFA.stateSet, ...rightNFA.stateSet, newStartingState]
 		 
 		 const resultingNFA = new NFA(newStartingState, newStateSet, newAlphabet)
 		 resultingNFA.registerTransition(newStartingState, "", leftNFA.startState)

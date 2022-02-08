@@ -142,6 +142,7 @@ class NFA {
     // we must create a transition A --x--> C, and then eliminate the transition
     // B --(null)--> C
     eliminateNullTransitions () {
+		console.log("Eliminating null transitions")
 		// Note that although this.stateSet is mutated by the callback function provided, this is okay
 		// because 23.2.3.6 of the ECMA specification guarantees that new items added to the set will still
 		// be traversed.
@@ -159,6 +160,7 @@ class NFA {
 					Object.entries(nullChild.transitions).forEach(([transitionSymbol, nullChildChildren]) => {
 						for (let nullChildChild of nullChildChildren) {
 							this.registerTransition(state, transitionSymbol, nullChildChild)
+							console.log("Connecting", state, "with", nullChildChild, "via", transitionSymbol, "for null elimination")
 						}
 					})
 					
