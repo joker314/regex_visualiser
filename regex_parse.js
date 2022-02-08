@@ -485,7 +485,7 @@ class QuantifierNode extends ASTNode {
 			suffix = alternatives.reduceRight((acc, currentPart, i) => new AlternationNode(-1, currentPart, acc))
 		}
 		
-		return new ConcatRegionNode(this.startNode, this.endNode, [...inlinedRepititions, suffix])
+		return new ConcatRegionNode(this.startNode, this.endNode, [...inlinedRepetitions, suffix])
 	}
 	
 	makeNFA () {
