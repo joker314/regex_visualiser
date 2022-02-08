@@ -110,12 +110,10 @@ class NFA {
     
     handleNullTransitions () {
         const stateQueue = [...this.currentStates]
-		console.log("stateQueue is", stateQueue)
         
 		let thisState;
         while (thisState = stateQueue.pop()) {
             thisState.getNextStates("").forEach(nextState => {
-				console.log("Null transition to", nextState)
                 if (!this.currentStates.has(nextState)) {
                     this.currentStates.add(nextState)
                     stateQueue.push(nextState)
@@ -197,36 +195,14 @@ class NFA {
     // we must create a transition A --x--> C, and then eliminate the transition
     // B --(null)--> C
     eliminateNullTransitions () {
-		console.log("Eliminating null transitions")
 		// Note that although this.stateSet is mutated by the callback function provided, this is okay
 		// because 23.2.3.6 of the ECMA specification guarantees that new items added to the set will still
 		// be traversed.
 		this.stateSet.forEach(state => {
 			let nullChildren; // the set of states which are just an epsilon-transition away from the current state
 			
-			while ((nullChildren = state.getNextStates("")).size) {
-				/**
-				console.log("null children at the moment are", Array.from(nullChildren))
+			while ((nullChildren = state.getNextStates("")).size) {				
 				for (let nullChild of nullChildren) {
-					// Create a connection directly between 'state' and each child of 'nullChild'.
-					// We will refer to each child of nullChild with the name 'nullChildChild'
-					// It is okay if the transitionSymbol is itself a null transition, because this is
-					// all being done in a while loop and will continue until there are no more null transitions
-					// from this state.
-					Object.entries(nullChild.transitions).forEach(([transitionSymbol, nullChildChildren]) => {
-						for (let nullChildChild of nullChildChildren) {
-							this.registerTransition(state, transitionSymbol, nullChildChild)
-							console.log("Connecting", state, "with", nullChildChild, "via", transitionSymbol, "for null elimination")
-						}
-					})
-					
-					// Now that we have all the connections, we don't need a  null transition to nullChild anymore.
-					this.unregisterTransition(state, "", nullChild)
-				}
-				*/
-				
-				for (let nullChild of nullChildren) {
-					console.log("Merging", nullChild, "and", state)
 					this.mergeStates(nullChild, state)
 					this.unregisterTransition(state, "", nullChild)
 				}
@@ -265,7 +241,6 @@ class NFA {
 			let nextLayer = []
 
 			for (let node of currentLayer) {
-				console.log("Current node in BFS is", node)
 				// TODO XXX: cool casting each set to array - consider using elsewhere
 				for (let childNode of Object.values(node.transitions).flatMap(set => Array.from(set))) {
 					if (visitedSet.has(childNode))
@@ -311,7 +286,6 @@ class NFA {
 			for (let [transitionSymbol, childNodes] of Object.entries(node.transitions)) {
 				// TODO: textual label
 				for (let childNode of childNodes) {
-					console.log("Creating edge", node.graphNode, childNode.graphNode)
 					edgeObjects.push(new GraphEdge(node.graphNode, childNode.graphNode, transitionSymbol))
 				}
 			}
