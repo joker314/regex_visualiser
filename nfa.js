@@ -76,6 +76,7 @@ class NFA {
 			if (fromState.transitions[inputSymbol].has(toState)) {
 				toState.indegree--
 				fromState.transitions[inputSymbol].delete(toState)
+				//debugger;
 			}
 			
 			// If this causes there to be no more transitions across this symbol
@@ -166,8 +167,10 @@ class NFA {
 	 * the transitions across.
 	 */
 	mergeStates (otherState, targetState) {
+		console.log("Request to merge", otherState, "into", targetState)
 		// Validate to make sure we're not trying to merge a state into itself
 		if (otherState === targetState) {
+			console.log("Tried to merge state into itself")
 			return
 		}
 		
@@ -210,6 +213,7 @@ class NFA {
 				for (let nullChild of nullChildren) {
 					this.mergeStates(nullChild, state)
 					this.unregisterTransition(state, "", nullChild)
+					console.log("Eliminated null transition between", state, "and", nullChild)
 				}
 			}
 		})

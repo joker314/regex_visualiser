@@ -26,7 +26,7 @@ regexInputBox.addEventListener("input", () => {
 		currentNFA = currentAST.makeNFA()
 		
 		// Before drawing the graph, it's good to simplify it a lot by eliminating null transitions
-		//currentNFA.eliminateNullTransitions()
+		currentNFA.eliminateNullTransitions()
 		//currentNFA.makeDFA()
 		currentEngine = new GraphDrawingEngine(nfaPicture, ...currentNFA.createGraph(nfaPicture.height, nfaPicture.width))
 	}
@@ -575,8 +575,8 @@ class CharacterNode extends ASTNode {
 	makeNFA () {
 		// The associated NFA of a single character is two nodes -- the start state,
 		// and the accepting state. There is just one transition, which is the character.
-		const startState = new NFAState(this.matchedChar + "->", true, false)
-		const acceptingState = new NFAState("->" + this.matchedChar, false, true)
+		const startState = new NFAState(this.matchedChar + "(left)", true, false)
+		const acceptingState = new NFAState("(right)" + this.matchedChar, false, true)
 		// TODO: decide on alphabet
 		const resultingNFA = new NFA(startState, [startState, acceptingState], [this.matchedChar])
 		resultingNFA.registerTransition(startState, this.matchedChar, acceptingState)
@@ -684,7 +684,7 @@ class AlternationNode extends ASTNode {
 		 */
 		 // XXX: make sure eliminating null transitions works even for starting states as this is an edge case
 		 
-		 const newStartingState = new NFAState(null, true, false)
+		 const newStartingState = new NFAState("alt prong", true, false)
 		 const leftNFA = this.leftHalf.makeNFA()
 		 const rightNFA = this.rightHalf.makeNFA()
 		 
@@ -697,8 +697,8 @@ class AlternationNode extends ASTNode {
 		 resultingNFA.registerTransition(newStartingState, "", rightNFA.startState)
 		 
 		 // Remove the two starting states since newStartingState is now the starting state of the combined NFA
-		 leftNFA.startState = false
-		 rightNFA.startState = false
+		 leftNFA.startState.isStartState = false
+		 rightNFA.startState.isStartState = false
 		 
 		 resultingNFA.reset()
 		 return resultingNFA
