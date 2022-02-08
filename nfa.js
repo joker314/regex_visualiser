@@ -145,6 +145,17 @@ class NFA {
 		// a reference to it somewhere else)
 		this.stateSet.delete(stateToDelete)
 	}
+	
+	// TODO: use this method more in regex_parse.js
+	transferStartState (formerStartState, newStartState) {
+		if (!formerStartState.isStartState) {
+			throw new Error("Tried to transfer the start state away from a state which is not actually the current start state")
+		}
+		
+		formerStartState.isStartState = false
+		newStartState.isStartState = true
+		this.startState = newStartState
+	}
     
 	/**
 	 * Take all the transitions out of otherState and add them to targetState's transitions.
@@ -157,8 +168,9 @@ class NFA {
 	 * the transitions across.
 	 */
 	mergeStates (otherState, targetState) {
-		if (otherState.isAcceptingState !== targetState.isAcceptingState) {
-			throw new Error("Tried to merge two states that can't possibly be equivalent, since one of them is accepting but the other isn't")
+		// Part of the merging process is merging the fact that this is an accepting state
+		if (otherState.isAcceptingState) {
+			targetState.isAcceptingState = true
 		}
 		
 		for (let [transitionSymbol, otherChildren] of Object.entries(otherState.transitions)) {
@@ -171,6 +183,13 @@ class NFA {
 				const fixedOtherChild = (otherChild === otherState) ? targetState : otherChild
 				this.registerTransition(targetState, transitionSymbol, fixedOtherChild)
 			}
+		}
+		
+		// Now that targetState has all of the former start state's transitions, it can behave just as the start
+		// state did. But we're not allowed to delete the start state because that would leave the NFA in an invalid state.
+		// So we must transfer the start state.
+		if (otherState.isStartState) {
+			this.transferStartState(otherState, targetState)
 		}
 	}
 	
