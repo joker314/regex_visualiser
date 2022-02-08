@@ -57,8 +57,9 @@ class NFA {
     
     handleNullTransitions () {
         const stateQueue = [...this.currentStates]
+		console.log("stateQueue is", stateQueue)
         
-	let thisState;
+		let thisState;
         while (thisState = stateQueue.pop()) {
             thisState.getNextStates("").forEach(nextState => {
                 if (!this.currentStates.has(nextState)) {
