@@ -85,7 +85,7 @@ class NFA {
     // Determines whether or not the NFA is in an accepting state. Usually called once all
 	// the input has been consumed -- but doesn't have to be.
     finish () {
-        return Array.from(this.currentStates).any(currentState => currentState.isAcceptingState)
+        return Array.from(this.currentStates).some(currentState => currentState.isAcceptingState)
     }
     
     reset () {
