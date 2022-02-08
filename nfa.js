@@ -102,7 +102,8 @@ class NFA {
 		// starting from the start node - but we will check at the end anyway just in case
 		
 		// First, partitition the graph into layers
-		const visitedSet = new Set()
+		// TODO: consider variable naming - node vs state
+		const visitedSet = new Set([this.startState])
 		const allLayers = []
 
 		let currentLayer = [this.startState]
@@ -112,8 +113,15 @@ class NFA {
 			let nextLayer = []
 
 			for (let node of currentLayer) {
-				visitedSet.add(node)
-				nextLayer.push(node)
+				console.log("Current node in BFS is", node)
+				// TODO XXX: cool casting each set to array - consider using elsewhere
+				for (let childNode of Object.values(node.transitions).flatMap(set => Array.from(set))) {
+					if (visitedSet.has(childNode))
+						continue;
+				
+					nextLayer.push(childNode)
+					visitedSet.add(childNode)
+				}
 			}
 
 			currentLayer = nextLayer
@@ -164,6 +172,7 @@ class NFAState {
         this.isStartState = isStartState
         this.isAcceptingState = isAcceptingState
         this.transitions = transitions
+		console.log("Transitions set to", transitions)
     }
     
     getNextStates (inputSymbol) {
