@@ -334,7 +334,7 @@ class ConcatRegionNode extends ASTNode {
 				// This involves taking all the accepting states of the
 				// accumulated NFA and creating a transition between them
 				// and the start state of currentNFA.
-				accumulatedNFA.states
+				accumulatedNFA.stateSet
 					.filter(state => state.isAcceptingState)
 					.forEach(acceptingState => {
 						accumulatedNFA.registerTransition(acceptingState, "", currentNFA.startState)
