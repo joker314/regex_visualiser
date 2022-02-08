@@ -568,8 +568,8 @@ class CharacterNode extends ASTNode {
 	makeNFA () {
 		// The associated NFA of a single character is two nodes -- the start state,
 		// and the accepting state. There is just one transition, which is the character.
-		const startState = new NFAState(null, true, false)
-		const acceptingState = new NFAState(null, false, true)
+		const startState = new NFAState(this.matchedChar + "->", true, false)
+		const acceptingState = new NFAState("->" + this.matchedChar, false, true)
 		// TODO: decide on alphabet
 		const resultingNFA = new NFA(startState, [startState, acceptingState], [this.matchedChar])
 		resultingNFA.registerTransition(startState, this.matchedChar, acceptingState)
