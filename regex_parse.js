@@ -355,6 +355,8 @@ class ConcatRegionNode extends ASTNode {
 				currentNFA.stateSet.forEach(state => accumulatedNFA.stateSet.add(state))
 				currentNFA.alphabet.forEach(character => accumulatedNFA.alphabet.add(character))
 				
+				accumulatedNFA.reset()
+				
 				// We've now appended currentNFA to accumulatedNFA, which means currentNFA is invalid (it doesn't have a start state)
 				// and accumulatedNFA has been mutated to contain the states from both NFAs. So that's the one we should return.
 				return accumulatedNFA
@@ -506,6 +508,7 @@ class QuantifierNode extends ASTNode {
 				resultingNFA.registerTransition(acceptingState, "", resultingNFA.startState)
 			})
 		
+		resultingNFA.reset()
 		return resultingNFA
 	}
 }
@@ -571,6 +574,7 @@ class CharacterNode extends ASTNode {
 		const resultingNFA = new NFA(startState, [startState, acceptingState], [this.matchedChar])
 		resultingNFA.registerTransition(startState, this.matchedChar, acceptingState)
 		
+		resultingNFA.reset()
 		return resultingNFA
 	}
 }
@@ -689,6 +693,7 @@ class AlternationNode extends ASTNode {
 		 leftNFA.startState = false
 		 rightNFA.startState = false
 		 
+		 resultingNFA.reset()
 		 return resultingNFA
 	}
 }
