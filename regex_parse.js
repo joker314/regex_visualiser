@@ -26,8 +26,8 @@ regexInputBox.addEventListener("input", () => {
 		currentNFA = currentAST.makeNFA()
 		
 		// Before drawing the graph, it's good to simplify it a lot by eliminating null transitions
-		currentNFA.eliminateNullTransitions()
-		currentNFA.makeDFA()
+		//currentNFA.eliminateNullTransitions()
+		//currentNFA.makeDFA()
 		currentEngine = new GraphDrawingEngine(nfaPicture, ...currentNFA.createGraph(nfaPicture.height, nfaPicture.width))
 	}
 })
@@ -481,7 +481,8 @@ class QuantifierNode extends ASTNode {
 					// TODO: use epsilon instead
 					alternatives.push(new CharacterNode(this.startPos, ''))	
 				} else {
-					alternatives.push(repeatTimes(this.repeatedBlock, repititionCount))
+					// TODO: move concatenation out into that helper function?
+					alternatives.push(new ConcatRegionNode(-1, -1, repeatTimes(this.repeatedBlock, repititionCount)))
 				}
 			}
 
