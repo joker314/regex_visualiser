@@ -24,7 +24,9 @@ regexInputBox.addEventListener("input", () => {
 		regexHumanReadable.replaceChildren(astRoot.getHumanReadable())
 		
 		currentNFA = currentAST.makeNFA()
-		console.log("NFA", currentNFA)
+		
+		// Before drawing the graph, it's good to simplify it a lot by eliminating null transitions
+		currentNFA.eliminateNullTransitions()
 		currentEngine = new GraphDrawingEngine(nfaPicture, ...currentNFA.createGraph(nfaPicture.height, nfaPicture.width))
 	}
 })

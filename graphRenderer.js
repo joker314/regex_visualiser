@@ -55,7 +55,6 @@ class GraphDrawingEngine {
 	}
 
 	drawLine (startPos, endPos) {
-		console.log("Drawing line between", startPos, endPos)
 		const [startX, startY] = this.scalePosition(...startPos)
 		const [endX, endY] = this.scalePosition(...endPos)
 
