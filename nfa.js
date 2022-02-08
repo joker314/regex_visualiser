@@ -90,9 +90,7 @@ class NFA {
 		// decrement some other state's indegree down to 0. Intuitively, this means that if we have a transition
 		// A --x--> B, and A is unreachable (so we want to remove it), and there is no other transition into B,
 		// then B must also be unreachable and we should delete it too.
-		if (toState.indegree === 0 && toState.isStartState) {
-			this.cleanupState(toState)
-		}
+		this.cleanupState(toState)
     }
     
     readSymbol (inputSymbol) {
@@ -130,14 +128,14 @@ class NFA {
 		
 		Object.entries(stateToDelete.transitions).forEach(([transitionSymbol, childStates]) => {
 			for (let childState of childStates) {
-				unregisterTransition(stateToDelete, transitionSymbol, childState)
+				this.unregisterTransition(stateToDelete, transitionSymbol, childState)
 			}
 		})
 		
 		// Now that this state has both zero outdegree and zero indegree, it is safe to remove it completely
 		// from the NFA object, so it will be garabage collected soon (as long as the programmer has not created
 		// a reference to it somewhere else)
-		this.stateSet.remove(stateToDelete)
+		this.stateSet.delete(stateToDelete)
 	}
     
     // If A --x--> B --(null)--> C, then to remove the null transition
@@ -151,14 +149,17 @@ class NFA {
 			let nullChildren; // the set of states which are just an epsilon-transition away from the current state
 			
 			while ((nullChildren = state.getNextStates("")).size) {
+				console.log("null children at the moment are", Array.from(nullChildren))
 				for (let nullChild of nullChildren) {
 					// Create a connection directly between 'state' and each child of 'nullChild'.
 					// We will refer to each child of nullChild with the name 'nullChildChild'
 					// It is okay if the transitionSymbol is itself a null transition, because this is
 					// all being done in a while loop and will continue until there are no more null transitions
 					// from this state.
-					Object.entries(nullChild.transitions).forEach(([transitionSymbol, nullChildChild]) => {
-						this.registerTransition(state, transitionSymbol, nullChildChild)
+					Object.entries(nullChild.transitions).forEach(([transitionSymbol, nullChildChildren]) => {
+						for (let nullChildChild of nullChildChildren) {
+							this.registerTransition(state, transitionSymbol, nullChildChild)
+						}
 					})
 					
 					// Now that we have all the connections, we don't need a  null transition to nullChild anymore.
