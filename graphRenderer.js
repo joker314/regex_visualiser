@@ -65,6 +65,14 @@ class GraphDrawingEngine {
 		this.context2d.lineTo(endX, endY)
 		this.context2d.stroke()
 	}
+	
+	// TODO: scale the font width e.g. binary search?
+	drawText (x, y, fontSize, text) {
+		this.context2d.fillStyle = "blue"
+		this.context2d.font = fontSize + "px Consolas"
+		this.context2d.textAlign = "center"
+		this.context2d.fillText(text, ...this.scalePosition(x, y))
+	}
 
 	startRendering () {
 		this.isRendering = true
@@ -76,7 +84,7 @@ class GraphDrawingEngine {
  * Represents a node
  */
 class GraphNode {
-	constructor (x, y) {
+	constructor (x, y, label = "") {
 		this.x = x
 		this.y = y
 	}
@@ -95,13 +103,26 @@ class GraphNode {
 }
 
 class GraphEdge {
-	constructor (startNode, endNode) {
+	constructor (startNode, endNode, label = "") {
 		this.startNode = startNode
 		this.endNode = endNode
+		this.label = label
 	}
 
 	render (engine, timestamp) {
 		engine.drawLine(...[this.startNode, this.endNode].map(node => [node.x, node.y]))
+		
+		// TODO: move to a util Function
+		function average(a, b) {
+			return (a + b) / 2
+		}
+		
+		engine.drawText(
+			average(this.startNode.x, this.endNode.x),
+			average(this.startNode.y, this.endNode.y),
+			30,
+			this.label
+		)
 	}
 }
 

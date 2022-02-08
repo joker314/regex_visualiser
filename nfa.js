@@ -195,7 +195,7 @@ class NFA {
 				// TODO: textual label
 				for (let childNode of childNodes) {
 					console.log("Creating edge", node.graphNode, childNode.graphNode)
-					edgeObjects.push(new GraphEdge(node.graphNode, childNode.graphNode))
+					edgeObjects.push(new GraphEdge(node.graphNode, childNode.graphNode, transitionSymbol))
 				}
 			}
 		})
