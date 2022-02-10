@@ -3,6 +3,9 @@ const regexOutput = document.getElementById("highlighted_regex")
 const regexHumanReadable = document.getElementById("human_readable")
 const nfaPicture = document.getElementById("nfa-picture")
 
+import {NFA, NFAState} from "./nfa.js"
+import {GraphDrawingEngine} from "./graphRenderer.js"
+
 let currentAST = null
 let currentNFA = null
 let currentEngine = null

@@ -1,3 +1,5 @@
+import {GraphNode, GraphEdge} from './graphRenderer.js'
+
 function enumerate (arr) {
 	/**
 	 * enumerate(["a", "b", "c"]) will, when iterated, produce
@@ -50,7 +52,7 @@ function enumerate (arr) {
 //
 // It also makes sure every DFA is valid by asserting that there is always
 // at least one start state
-class NFA {
+export class NFA {
     constructor (startState, stateSet, alphabet, isDFA = false) {
         this.startState = startState
         this.stateSet = new Set(stateSet)
@@ -336,7 +338,7 @@ class NFA {
     }
 }
 
-class NFAState {
+export class NFAState {
     constructor (humanName, isStartState, isAcceptingState, transitions = {}, indegree = 0) {
         this.humanName = humanName
         this.isStartState = isStartState

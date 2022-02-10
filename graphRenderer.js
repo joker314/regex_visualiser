@@ -7,7 +7,7 @@ function average(a, b) {
  * Can be used to render arbitrary graphs using a force-directed technique
  */
 
-class GraphDrawingEngine {
+export class GraphDrawingEngine {
 	// TODO: decide whether to use a queue or callback for I/O
 	constructor (canvasElement, graphNodes, graphEdges) {
 		this.canvasElement = canvasElement
@@ -88,6 +88,10 @@ class GraphDrawingEngine {
 		this.drawOffsetCurve(startPos, endPos, 0)
 	}
 	
+	drawHalfCircle (startPos, endPos) {
+		
+	}
+	
 	drawUpwardCurve (startPos, endPos) {
 		const extraHeight = Math.max(0, Math.abs(endPos[0] - startPos[0]) - 30) / 8
 		const extraWidth = startPos[0] === endPos[0] ? 3 : 0
@@ -121,7 +125,7 @@ class GraphDrawingEngine {
 /**
  * Represents a node
  */
-class GraphNode {
+export class GraphNode {
 	constructor (x, y, color = "orange", label = "") {
 		this.x = x
 		this.y = y
@@ -143,7 +147,7 @@ class GraphNode {
 	}
 }
 
-class GraphEdge {
+export class GraphEdge {
 	constructor (startNode, endNode, label = "") {
 		this.startNode = startNode
 		this.endNode = endNode
