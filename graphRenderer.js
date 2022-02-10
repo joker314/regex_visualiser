@@ -1,6 +1,7 @@
 // TODO: move to a util Function
 // TODO: scaling code needs reworking now that x and y used internally by simulation?
 // TODO: refactor away constants like radius
+// TODO: move into submodules
 // or maybe it's fine.
 // XXX: curved edges idea from https://bl.ocks.org/mbostock/4600693
 // XXX: library API reference at https://github.com/d3/d3-force
@@ -13,8 +14,15 @@ import {
 	forceCollide
 } from "https://cdn.skypack.dev/d3-force@3";
 
-function average(a, b) {
-	return (a + b) / 2
+import {Vector} from './vector.js'
+import {Transformation} from './transformation.js'
+
+import {random} from './util.js'
+
+function average(a, b, weight = 0.5) {
+	const antiweight = 1 - weight
+	
+	return (weight * a) + (antiweight * b)
 }
 
 /**
@@ -39,13 +47,17 @@ export class GraphDrawingEngine {
 			.force("center", forceCenter())
 			.force("collide", forceCollide(30))
 			.on("tick", this.render.bind(this))
-			
+		
 		this.isMouseDown = false
 		this.fixedNode = null
 		
+		
+		/**
 		this.scale = 1 // XXX: decided to manually handle coordinates so as to consistently handle mouse movements
 		this.offsetX = this.canvasElement.width / 2
 		this.offsetY = this.canvasElement.height / 2
+		*/
+		this.transformation = new Transformation(this.canvasElement.width / 2, this.canvasElement.height / 2, 1)
 		this.isRendering = false
 		
 		this.registerEventListeners()
@@ -68,21 +80,9 @@ export class GraphDrawingEngine {
 		}
 	}
 
-	scalePosition (x, y) {
-		return [(x + this.offsetX) * this.scale, (y + this.offsetY) * this.scale]
-	}
-	
-	unscalePosition (x, y) {
-		return [(x / this.scale) - this.offsetX, (y / this.scale) - this.offsetY]
-	}
-
-	scaleDistance (r) {
-		return r * this.scale
-	}
-
 	drawCircle (x, y, r, fillCol) {
-		const [newX, newY] = this.scalePosition(x, y)
-		const newR = this.scaleDistance(r)
+		const [newX, newY] = this.transformation.scalePosition(x, y)
+		const newR = this.transformation.scaleDistance(r)
 		
 		this.context2d.beginPath()
 		this.context2d.fillStyle = fillCol
@@ -91,8 +91,8 @@ export class GraphDrawingEngine {
 	}
 	
 	drawOffsetCurve (startPos, endPos, verticalOffset, horizontalOffset) {
-		const [startX, startY] = this.scalePosition(...startPos)
-		const [endX, endY] = this.scalePosition(...endPos)
+		const [startX, startY] = this.transformation.scalePosition(...startPos)
+		const [endX, endY] = this.transformation.scalePosition(...endPos)
 		
 		// Create a blueprint from which to draw the two control points
 		const offsetControlPoint = [average(startX, endX), average(startY, endY) + verticalOffset]
@@ -144,7 +144,7 @@ export class GraphDrawingEngine {
 		this.context2d.fillStyle = "blue"
 		this.context2d.font = fontSize + "px Consolas"
 		this.context2d.textAlign = "center"
-		this.context2d.fillText(text, ...this.scalePosition(x, y))
+		this.context2d.fillText(text, ...this.transformation.scalePosition(x, y))
 	}
 
 	startRendering () {
@@ -156,6 +156,7 @@ export class GraphDrawingEngine {
 		const EVENTS = {
 			"mousedown": event => {
 				this.isMouseDown = true
+				this.fixedNode.fx = this.fixedNode.fy = null
 				this.mouseMoved(event)
 			},
 			
@@ -189,7 +190,7 @@ export class GraphDrawingEngine {
 		const mouseX = (event.clientX - rectangle.left) * widthScale
 		const mouseY = (event.clientY - rectangle.top) * heightScale
 		
-		const [adjustedX, adjustedY] = this.unscalePosition(mouseX, mouseY)
+		const [adjustedX, adjustedY] = this.transformation.unscalePosition(mouseX, mouseY)
 		const nodeToMove = this.simulation.find(adjustedX, adjustedY)
 		
 		nodeToMove.fx = adjustedX
@@ -198,6 +199,46 @@ export class GraphDrawingEngine {
 		this.fixedNode = nodeToMove
 		
 		this.simulation.alphaTarget(0.3)
+	}
+	
+	arrowAt (position, towards) {
+		const ARROW_SHAPE = [
+			new Vector(0, -20),
+			new Vector(0, 20),
+			new Vector(40, 0)
+		]
+		
+		//console.log("Position", position)
+		//console.log("Towards", towards)
+		
+		const directionVector = new Vector(...towards).minus(new Vector(...position))
+		const directionAngle = directionVector.angle()
+		
+		const rotatedArrow = ARROW_SHAPE.map(
+			vector => vector.rotate(directionAngle)
+		)
+		
+		this.context2d.beginPath()
+		this.context2d.fillStyle = "black"
+		
+		//console.log("this", this, GraphDrawingEngine, this.transformation, this.transformation.scalePosition)
+		
+		//console.log("arrow shape is", JSON.stringify(rotatedArrow.map(vector => vector.components)))
+		const coordinates = rotatedArrow
+			.map(vector => vector.add(new Vector(...position)))
+			.map(vector => this.transformation.scalePosition(...vector.components))
+			
+		this.context2d.beginPath()
+		this.context2d.fillStyle = "black"
+		this.context2d.moveTo(...coordinates[0])
+		
+		coordinates.forEach(coordinate => {
+			this.context2d.lineTo(...coordinate)
+		})
+		
+		this.context2d.closePath()
+		
+		this.context2d.fill()
 	}
 }
 
@@ -231,9 +272,15 @@ export class GraphEdge {
 		this.startNode = startNode
 		this.endNode = endNode
 		this.label = label
+		
 		this.d3Rep = {
 			source: this.startNode,
 			target: this.endNode
+		}
+		
+		this.intermediateNode = {
+			x: average(this.startNode.x, startNode.y),
+			y: average(this.startNode.x, startNode.y)
 		}
 	}
 
@@ -246,6 +293,8 @@ export class GraphEdge {
 			engine.drawDownwardCurve(...coordinates)
 		}**/
 		engine.drawLine(...coordinates)
+		
+		engine.arrowAt([average(this.startNode.x, this.endNode.x, 0.3), average(this.startNode.y, this.endNode.y, 0.3)], coordinates[1])
 		
 		engine.drawText(
 			average(this.startNode.x, this.endNode.x),

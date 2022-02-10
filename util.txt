@@ -1,0 +1,5 @@
+export function random(lower, upper) {
+	const rangeSize = upper - lower
+	
+	return lower + Math.random() * rangeSize
+}
