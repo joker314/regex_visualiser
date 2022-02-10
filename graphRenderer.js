@@ -1,4 +1,18 @@
 // TODO: move to a util Function
+// TODO: scaling code needs reworking now that x and y used internally by simulation?
+// TODO: refactor away constants like radius
+// or maybe it's fine.
+// XXX: curved edges idea from https://bl.ocks.org/mbostock/4600693
+// XXX: library API reference at https://github.com/d3/d3-force
+
+import {
+	forceSimulation,
+	forceLink,
+	forceManyBody,
+	forceCenter,
+	forceCollide
+} from "https://cdn.skypack.dev/d3-force@3";
+
 function average(a, b) {
 	return (a + b) / 2
 }
@@ -12,17 +26,30 @@ export class GraphDrawingEngine {
 	constructor (canvasElement, graphNodes, graphEdges) {
 		this.canvasElement = canvasElement
 		this.context2d = canvasElement.getContext("2d")
-
+		
 		this.graphNodes = graphNodes
 		this.graphEdges = graphEdges
 		this.zoomButtons = new ZoomButtons()
+		
+		const d3GraphEdges = this.graphEdges.map(edge => edge.d3Rep)
 
+		this.simulation = forceSimulation(this.graphNodes)
+			.force("link", forceLink(d3GraphEdges).distance(90))
+			.force("charge", forceManyBody())
+			.force("center", forceCenter())
+			.force("collide", forceCollide(30))
+			.on("tick", this.render.bind(this))
+			
+		this.isMouseDown = false
+		this.fixedNode = null
+		
 		this.scale = 1 // XXX: decided to manually handle coordinates so as to consistently handle mouse movements
-		this.offsetX = 0
-		this.offsetY = 0
+		this.offsetX = this.canvasElement.width / 2
+		this.offsetY = this.canvasElement.height / 2
 		this.isRendering = false
 		
-		this.startRendering() // XXX: could also involve initialisation logic vs just requestAnimationFrame(this.render)
+		this.registerEventListeners()
+		//this.startRendering() // XXX: could also involve initialisation logic vs just requestAnimationFrame(this.render)
 	}
 
 	render (timestamp) {
@@ -43,6 +70,10 @@ export class GraphDrawingEngine {
 
 	scalePosition (x, y) {
 		return [(x + this.offsetX) * this.scale, (y + this.offsetY) * this.scale]
+	}
+	
+	unscalePosition (x, y) {
+		return [(x / this.scale) - this.offsetX, (y / this.scale) - this.offsetY]
 	}
 
 	scaleDistance (r) {
@@ -120,6 +151,54 @@ export class GraphDrawingEngine {
 		this.isRendering = true
 		window.requestAnimationFrame(this.render.bind(this))
 	}
+	
+	registerEventListeners () {
+		const EVENTS = {
+			"mousedown": event => {
+				this.isMouseDown = true
+				this.mouseMoved(event)
+			},
+			
+			"mousemove": event => this.mouseMoved(event),
+			
+			"mouseup": () => {
+				this.isMouseDown = false
+				this.fixedNode.fx = this.fixedNode.fy = null
+				this.simulation.restart()
+			}
+		}
+		
+		for (let [eventName, cb] of Object.entries(EVENTS)) {
+			this.canvasElement.addEventListener(eventName, cb.bind(this))
+		}
+	}
+	
+	mouseMoved (event) {
+		if (!this.isMouseDown) {
+			return
+		}
+		
+		console.log("Movement!")
+		
+		const rectangle = this.canvasElement.getBoundingClientRect()
+		
+		// TODO: overengineered? ratio is 1:1
+		const heightScale = this.canvasElement.height / rectangle.height
+		const widthScale = this.canvasElement.width / rectangle.width
+		
+		const mouseX = (event.clientX - rectangle.left) * widthScale
+		const mouseY = (event.clientY - rectangle.top) * heightScale
+		
+		const [adjustedX, adjustedY] = this.unscalePosition(mouseX, mouseY)
+		const nodeToMove = this.simulation.find(adjustedX, adjustedY)
+		
+		nodeToMove.fx = adjustedX
+		nodeToMove.fy = adjustedY
+		
+		this.fixedNode = nodeToMove
+		
+		this.simulation.alphaTarget(0.3)
+	}
 }
 
 /**
@@ -152,16 +231,21 @@ export class GraphEdge {
 		this.startNode = startNode
 		this.endNode = endNode
 		this.label = label
+		this.d3Rep = {
+			source: this.startNode,
+			target: this.endNode
+		}
 	}
 
 	render (engine, timestamp) {
 		const coordinates = [this.startNode, this.endNode].map(node => [node.x, node.y])
 		
-		if (this.endNode.x < this.startNode.x) {
+		/**if (this.endNode.x < this.startNode.x) {
 			engine.drawUpwardCurve(...coordinates)
 		} else {
 			engine.drawDownwardCurve(...coordinates)
-		}
+		}**/
+		engine.drawLine(...coordinates)
 		
 		engine.drawText(
 			average(this.startNode.x, this.endNode.x),
