@@ -59,11 +59,20 @@ class GraphDrawingEngine {
 		this.context2d.fill()
 	}
 	
-	drawOffsetCurve (startPos, endPos, verticalOffset) {
+	drawOffsetCurve (startPos, endPos, verticalOffset, horizontalOffset) {
 		const [startX, startY] = this.scalePosition(...startPos)
 		const [endX, endY] = this.scalePosition(...endPos)
 		
+		// Create a blueprint from which to draw the two control points
 		const offsetControlPoint = [average(startX, endX), average(startY, endY) + verticalOffset]
+		
+		// Clone them so that they can be mutated independently of each other
+		const controlA = Array.from(offsetControlPoint)
+		const controlB = Array.from(offsetControlPoint)
+		
+		// Increment one and decrement the other ever so slightly, so as to make self-loops more obvious
+		//controlA[0] -= horizontalOffset
+		//controlB[0] += horizontalOffset
 		
 		this.context2d.beginPath()
 		this.context2d.strokeStyle = "red"
@@ -80,11 +89,19 @@ class GraphDrawingEngine {
 	}
 	
 	drawUpwardCurve (startPos, endPos) {
-		return this.drawOffsetCurve(startPos, endPos, 10)
+		const extraHeight = Math.max(0, Math.abs(endPos[0] - startPos[0]) - 30) / 8
+		const extraWidth = startPos[0] === endPos[0] ? 3 : 0
+		
+		console.log("Extra height", extraHeight)
+		return this.drawOffsetCurve(startPos, endPos, 10 + extraHeight + extraWidth, extraWidth)
 	}
 	
 	drawDownwardCurve (startPos, endPos) {
-		return this.drawOffsetCurve(startPos, endPos, -10)
+		const extraHeight = Math.max(0, Math.abs(endPos[0] - startPos[0]) - 30) / 8
+		const extraWidth = startPos[0] === endPos[0] ? 3 : 0
+		
+		console.log("Extra height", extraHeight)
+		return this.drawOffsetCurve(startPos, endPos, -10 - extraHeight - extraWidth, extraWidth)
 	}
 	
 	// TODO: scale the font width e.g. binary search?
