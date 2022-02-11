@@ -39,13 +39,14 @@ export class GraphDrawingEngine {
 		this.graphEdges = graphEdges
 		this.zoomButtons = new ZoomButtons()
 		
-		const d3GraphEdges = this.graphEdges.map(edge => edge.d3Rep)
+		const d3GraphEdges = this.graphEdges.flatMap(edge => edge.links)
+		const intermediateNodes = this.graphEdges.map(edge => edge.intermediateNode)
 
-		this.simulation = forceSimulation(this.graphNodes)
+		this.simulation = forceSimulation(this.graphNodes.concat(intermediateNodes))
 			.force("link", forceLink(d3GraphEdges).distance(90))
 			.force("charge", forceManyBody())
 			.force("center", forceCenter())
-			.force("collide", forceCollide(30))
+			.force("collide", forceCollide(30).iterations(20))
 			.on("tick", this.render.bind(this))
 		
 		this.isMouseDown = false
@@ -201,6 +202,19 @@ export class GraphDrawingEngine {
 		this.simulation.alphaTarget(0.3)
 	}
 	
+	bezierCurveTo (startPos, controlPoint, endPos) {
+		const scaledStart = this.transformation.scalePosition(...startPos)
+		const scaledControl = this.transformation.scalePosition(...controlPoint)
+		const scaledEnd = this.transformation.scalePosition(...endPos)
+		
+		this.context2d.beginPath()
+		this.context2d.moveTo(...scaledStart)
+		this.context2d.bezierCurveTo(...scaledControl, ...scaledControl, ...scaledEnd)
+		
+		this.context2d.strokeStyle = "red"
+		this.context2d.stroke()
+	}
+	
 	arrowAt (position, towards) {
 		const ARROW_SHAPE = [
 			new Vector(0, -20),
@@ -273,15 +287,21 @@ export class GraphEdge {
 		this.endNode = endNode
 		this.label = label
 		
-		this.d3Rep = {
-			source: this.startNode,
-			target: this.endNode
+		this.intermediateNode = {
+			x: average(this.startNode.x, this.endNode.x),
+			y: average(this.startNode.y, this.endNode.y)
 		}
 		
-		this.intermediateNode = {
-			x: average(this.startNode.x, startNode.y),
-			y: average(this.startNode.x, startNode.y)
-		}
+		this.links = [
+			{
+				source: this.startNode,
+				target: this.intermediateNode
+			},
+			{
+				source: this.intermediateNode,
+				target: this.endNode
+			}
+		]
 	}
 
 	render (engine, timestamp) {
@@ -292,7 +312,7 @@ export class GraphEdge {
 		} else {
 			engine.drawDownwardCurve(...coordinates)
 		}**/
-		engine.drawLine(...coordinates)
+		engine.bezierCurveTo(coordinates[0], [this.intermediateNode.x, this.intermediateNode.y], coordinates[1])
 		
 		engine.arrowAt([average(this.startNode.x, this.endNode.x, 0.3), average(this.startNode.y, this.endNode.y, 0.3)], coordinates[1])
 		
