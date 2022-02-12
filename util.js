@@ -1,3 +1,5 @@
+import {Point} from './vector.js'
+
 export function random(lower, upper) {
 	const rangeSize = upper - lower
 	
@@ -27,7 +29,7 @@ export function bezier(points, t) {
 		const point = points[i]
 		const nextPoint = points[i + 1]
 		
-		const interpolatedPoint = [average(point[0], nextPoint[0], t), average(point[1], nextPoint[1], t)]
+		const interpolatedPoint = new Point(average(point.x, nextPoint.x, t), average(point.y, nextPoint.y, t))
 		nextPoints.push(interpolatedPoint)
 	}
 	

@@ -1,3 +1,5 @@
+import {Point} from './vector.js'
+
 export class Transformation {
 	constructor (offsetX, offsetY, scale) {
 		this.offsetX = offsetX
@@ -15,5 +17,9 @@ export class Transformation {
 	
 	scaleDistance (r) {
 		return r * this.scale
+	}
+	
+	scalePoint (point) {
+		return new Point(...this.scalePosition(point.x, point.y))
 	}
 }

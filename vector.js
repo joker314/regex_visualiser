@@ -69,4 +69,19 @@ export class Vector {
 
 		return unitVectorInDirection(newDirection).scale(newLength)
 	}
+	
+	fromOrigin () {
+		return new Point(...this.components)
+	}
+}
+
+export class Point {
+	constructor (x, y) {
+		this.x = x
+		this.y = y
+	}
+	
+	[Symbol.iterator] () {
+		return [this.x, this.y].values()
+	}
 }

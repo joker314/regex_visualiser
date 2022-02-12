@@ -14,10 +14,12 @@ import {
 	forceCollide
 } from "https://cdn.skypack.dev/d3-force@3";
 
-import {Vector} from './vector.js'
+import {Vector, Point} from './vector.js'
 import {Transformation} from './transformation.js'
 
 import {random, average, bezier} from './util.js'
+
+import {Canvas} from './canvas.js'
 
 /**
  * Can be used to render arbitrary graphs using a force-directed technique
@@ -26,12 +28,20 @@ import {random, average, bezier} from './util.js'
 export class GraphDrawingEngine {
 	// TODO: decide whether to use a queue or callback for I/O
 	constructor (canvasElement, graphNodes, graphEdges) {
-		this.canvasElement = canvasElement
-		this.context2d = canvasElement.getContext("2d")
+		this.canvas = new Canvas(canvasElement)
 		
 		this.graphNodes = graphNodes
 		this.graphEdges = graphEdges
 		this.zoomButtons = new ZoomButtons()
+		
+		
+		this.isMouseDown = false
+		this.fixedNode = null
+		
+		this.transformation = new Transformation(this.canvas.el.width / 2, this.canvas.el.height / 2, 1)
+		this.isRendering = false
+		
+		this.registerEventListeners()
 		
 		const d3GraphEdges = this.graphEdges.flatMap(edge => edge.links)
 		const intermediateNodes = this.graphEdges.map(edge => edge.intermediateNode)
@@ -42,25 +52,10 @@ export class GraphDrawingEngine {
 			.force("center", forceCenter())
 			.force("collide", forceCollide(30).iterations(20))
 			.on("tick", this.render.bind(this))
-		
-		this.isMouseDown = false
-		this.fixedNode = null
-		
-		
-		/**
-		this.scale = 1 // XXX: decided to manually handle coordinates so as to consistently handle mouse movements
-		this.offsetX = this.canvasElement.width / 2
-		this.offsetY = this.canvasElement.height / 2
-		*/
-		this.transformation = new Transformation(this.canvasElement.width / 2, this.canvasElement.height / 2, 1)
-		this.isRendering = false
-		
-		this.registerEventListeners()
-		//this.startRendering() // XXX: could also involve initialisation logic vs just requestAnimationFrame(this.render)
 	}
 
 	render (timestamp) {
-		this.context2d.clearRect(0, 0, this.canvasElement.width, this.canvasElement.height)
+		this.canvas.clearScreen()
 
 		this.graphNodes.forEach(node => {
 			node.render(this, timestamp)
@@ -69,78 +64,9 @@ export class GraphDrawingEngine {
 		this.graphEdges.forEach(edge => {
 			edge.render(this, timestamp)
 		})
+	}
+	
 
-		if (this.isRendering) {
-			window.requestAnimationFrame(this.render.bind(this))
-		}
-	}
-
-	drawCircle (x, y, r, fillCol) {
-		const [newX, newY] = this.transformation.scalePosition(x, y)
-		const newR = this.transformation.scaleDistance(r)
-		
-		this.context2d.beginPath()
-		this.context2d.fillStyle = fillCol
-		this.context2d.arc(newX, newY, newR, 0, 2 * Math.PI)
-		this.context2d.fill()
-	}
-	
-	drawOffsetCurve (startPos, endPos, verticalOffset, horizontalOffset) {
-		const [startX, startY] = this.transformation.scalePosition(...startPos)
-		const [endX, endY] = this.transformation.scalePosition(...endPos)
-		
-		// Create a blueprint from which to draw the two control points
-		const offsetControlPoint = [average(startX, endX), average(startY, endY) + verticalOffset]
-		
-		// Clone them so that they can be mutated independently of each other
-		const controlA = Array.from(offsetControlPoint)
-		const controlB = Array.from(offsetControlPoint)
-		
-		// Increment one and decrement the other ever so slightly, so as to make self-loops more obvious
-		//controlA[0] -= horizontalOffset
-		//controlB[0] += horizontalOffset
-		
-		this.context2d.beginPath()
-		this.context2d.strokeStyle = "red"
-		this.context2d.moveTo(startX, startY)
-		
-		// Using the same control point twice reduces to a quadratic Bezier curve
-		// TODO: include proof in documented design?
-		this.context2d.bezierCurveTo(...offsetControlPoint, ...offsetControlPoint, endX, endY)
-		this.context2d.stroke()
-	}
-	
-	drawLine (startPos, endPos) {
-		this.drawOffsetCurve(startPos, endPos, 0)
-	}
-	
-	drawHalfCircle (startPos, endPos) {
-		
-	}
-	
-	drawUpwardCurve (startPos, endPos) {
-		const extraHeight = Math.max(0, Math.abs(endPos[0] - startPos[0]) - 30) / 8
-		const extraWidth = startPos[0] === endPos[0] ? 3 : 0
-		
-		console.log("Extra height", extraHeight)
-		return this.drawOffsetCurve(startPos, endPos, 10 + extraHeight + extraWidth, extraWidth)
-	}
-	
-	drawDownwardCurve (startPos, endPos) {
-		const extraHeight = Math.max(0, Math.abs(endPos[0] - startPos[0]) - 30) / 8
-		const extraWidth = startPos[0] === endPos[0] ? 3 : 0
-		
-		console.log("Extra height", extraHeight)
-		return this.drawOffsetCurve(startPos, endPos, -10 - extraHeight - extraWidth, extraWidth)
-	}
-	
-	// TODO: scale the font width e.g. binary search?
-	drawText (x, y, fontSize, text) {
-		this.context2d.fillStyle = "blue"
-		this.context2d.font = fontSize + "px Consolas"
-		this.context2d.textAlign = "center"
-		this.context2d.fillText(text, ...this.transformation.scalePosition(x, y))
-	}
 
 	startRendering () {
 		this.isRendering = true
@@ -165,7 +91,7 @@ export class GraphDrawingEngine {
 		}
 		
 		for (let [eventName, cb] of Object.entries(EVENTS)) {
-			this.canvasElement.addEventListener(eventName, cb.bind(this))
+			this.canvas.el.addEventListener(eventName, cb.bind(this))
 		}
 	}
 	
@@ -176,11 +102,11 @@ export class GraphDrawingEngine {
 		
 		console.log("Movement!")
 		
-		const rectangle = this.canvasElement.getBoundingClientRect()
+		const rectangle = this.canvas.el.getBoundingClientRect()
 		
 		// TODO: overengineered? ratio is 1:1
-		const heightScale = this.canvasElement.height / rectangle.height
-		const widthScale = this.canvasElement.width / rectangle.width
+		const heightScale = this.canvas.el.height / rectangle.height
+		const widthScale = this.canvas.el.width / rectangle.width
 		
 		const mouseX = (event.clientX - rectangle.left) * widthScale
 		const mouseY = (event.clientY - rectangle.top) * heightScale
@@ -195,59 +121,6 @@ export class GraphDrawingEngine {
 		
 		this.simulation.alphaTarget(0.3).restart()
 	}
-	
-	bezierCurveTo (startPos, controlPoint, endPos) {
-		const scaledStart = this.transformation.scalePosition(...startPos)
-		const scaledControl = this.transformation.scalePosition(...controlPoint)
-		const scaledEnd = this.transformation.scalePosition(...endPos)
-		
-		this.context2d.beginPath()
-		this.context2d.moveTo(...scaledStart)
-		this.context2d.bezierCurveTo(...scaledControl, ...scaledControl, ...scaledEnd)
-		
-		this.context2d.strokeStyle = "red"
-		this.context2d.stroke()
-	}
-	
-	arrowAt (position, towards) {
-		const ARROW_SHAPE = [
-			new Vector(0, -20),
-			new Vector(0, 20),
-			new Vector(40, 0)
-		]
-		
-		//console.log("Position", position)
-		//console.log("Towards", towards)
-		
-		const directionVector = new Vector(...towards).minus(new Vector(...position))
-		const directionAngle = directionVector.angle()
-		
-		const rotatedArrow = ARROW_SHAPE.map(
-			vector => vector.rotate(directionAngle)
-		)
-		
-		this.context2d.beginPath()
-		this.context2d.fillStyle = "black"
-		
-		//console.log("this", this, GraphDrawingEngine, this.transformation, this.transformation.scalePosition)
-		
-		//console.log("arrow shape is", JSON.stringify(rotatedArrow.map(vector => vector.components)))
-		const coordinates = rotatedArrow
-			.map(vector => vector.add(new Vector(...position)))
-			.map(vector => this.transformation.scalePosition(...vector.components))
-			
-		this.context2d.beginPath()
-		this.context2d.fillStyle = "black"
-		this.context2d.moveTo(...coordinates[0])
-		
-		coordinates.forEach(coordinate => {
-			this.context2d.lineTo(...coordinate)
-		})
-		
-		this.context2d.closePath()
-		
-		this.context2d.fill()
-	}
 }
 
 /**
@@ -261,17 +134,16 @@ export class GraphNode {
 		this.label = label
 		// TODO: this.label unused
 	}
+	
+	getPoint () {
+		return new Point(this.x, this.y)
+	}
 
 	render (engine, timestamp) {
-		engine.drawCircle(this.x, this.y, 30, this.color)
-	}
-
-	onMouseover () {
+		//console.log(engine)
+		const position = engine.transformation.scalePoint(this.getPoint())
 		
-	}
-
-	onMouseout () {
-
+		engine.canvas.drawCircle(position, 30, this.color)
 	}
 }
 
@@ -299,26 +171,19 @@ export class GraphEdge {
 	}
 
 	render (engine, timestamp) {
-		const coordinates = [this.startNode, this.endNode].map(node => [node.x, node.y])
+		const bezierParameters = [
+			this.startNode.getPoint(),
+			new Point(this.intermediateNode.x, this.intermediateNode.y),
+			this.endNode.getPoint()
+		].map(point => engine.transformation.scalePoint(point))
 		
-		/**if (this.endNode.x < this.startNode.x) {
-			engine.drawUpwardCurve(...coordinates)
-		} else {
-			engine.drawDownwardCurve(...coordinates)
-		}**/
+		engine.canvas.drawBezier(...bezierParameters)
 		
-		const bezierCoords = [coordinates[0], [this.intermediateNode.x, this.intermediateNode.y], [this.intermediateNode.x, this.intermediateNode.y], coordinates[1]]
+		const endPoint = bezierParameters[2]
 		
-		engine.bezierCurveTo(coordinates[0], [this.intermediateNode.x, this.intermediateNode.y], coordinates[1])
-		
-		engine.arrowAt(bezier(bezierCoords, 0.2), coordinates[1])
-		
-		//console.log("Bezier", bezier([coordinates[0], [this.intermediateNode.x, this.intermediateNode.y], coordinates[1]], 0),
-		//			"vs", coordinates[1])
-		
-		
-		engine.drawText(
-			...bezier(bezierCoords, 0.5),
+		engine.canvas.arrowAt(bezier(bezierParameters, 0.2), endPoint)
+		engine.canvas.drawText(
+			bezier(bezierParameters, 0.5),
 			30,
 			this.label
 		)
