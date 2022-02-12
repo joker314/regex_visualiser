@@ -193,7 +193,7 @@ export class GraphDrawingEngine {
 		
 		this.fixedNode = nodeToMove
 		
-		this.simulation.alphaTarget(0.3)
+		this.simulation.alphaTarget(0.3).restart()
 	}
 	
 	bezierCurveTo (startPos, controlPoint, endPos) {
