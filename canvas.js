@@ -18,13 +18,15 @@ export class Canvas {
 		this.ctx.fill()
 	}
 	
-	drawBezier (start, control, end) {
+	drawBezier (bezierParameters) {
+		const [startPoint, ...controlAndEndPoints] = bezierParameters 
+		
 		this.ctx.beginPath()
 		this.ctx.strokeStyle = "red"
-		this.ctx.moveTo(start.x, start.y)
-		
-		// Use the same control point twice
-		this.ctx.bezierCurveTo(control.x, control.y, control.x, control.y, end.x, end.y)
+		this.ctx.moveTo(startPoint.x, startPoint.y)
+
+		//console.log("params", bezierParameters)
+		this.ctx.bezierCurveTo(...controlAndEndPoints.flatMap(point => [point.x, point.y]))
 		this.ctx.stroke()
 	}
 

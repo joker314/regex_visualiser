@@ -48,7 +48,15 @@ export class GraphDrawingEngine {
 
 		this.simulation = forceSimulation(this.graphNodes.concat(intermediateNodes))
 			.force("link", forceLink(d3GraphEdges).distance(90))
-			.force("charge", forceManyBody())
+			.force("charge", forceManyBody().strength(node => {
+				// In self-loops, the intermediate node is being pulled on with double the strength
+				// so let's increase the repulsive force to account for that
+				if (node.isSelf) {
+					return -90
+				}
+				
+				return -30
+			}))
 			.force("center", forceCenter())
 			.force("collide", forceCollide(30).iterations(20))
 			.on("tick", this.render.bind(this))
@@ -63,6 +71,8 @@ export class GraphDrawingEngine {
 
 		this.graphEdges.forEach(edge => {
 			edge.render(this, timestamp)
+			// DEBUG TODO
+			this.canvas.drawCircle(this.transformation.scalePoint(edge.intermediateNode), 10, "black")
 		})
 	}
 	
@@ -153,9 +163,19 @@ export class GraphEdge {
 		this.endNode = endNode
 		this.label = label
 		
-		this.intermediateNode = {
-			x: average(this.startNode.x, this.endNode.x),
-			y: average(this.startNode.y, this.endNode.y)
+		if (this.startNode === this.endNode) {
+			// This is a self-loop.
+			// Place it at a random location 40 units away from the centre.
+			this.intermediateNode = this.startNode.getPoint().positionVector().add(
+				new Vector(80, 0).rotate(random(0, 2 * Math.PI))
+			).fromOrigin()
+			
+			this.intermediateNode.isSelf = true
+		} else {
+			this.intermediateNode = new Point(
+				average(this.startNode.x, this.endNode.x),
+				average(this.startNode.y, this.endNode.y)
+			)
 		}
 		
 		this.links = [
@@ -171,17 +191,46 @@ export class GraphEdge {
 	}
 
 	render (engine, timestamp) {
-		const bezierParameters = [
-			this.startNode.getPoint(),
-			new Point(this.intermediateNode.x, this.intermediateNode.y),
-			this.endNode.getPoint()
-		].map(point => engine.transformation.scalePoint(point))
+		let bezierParameters;
+		const intermediatePoint = new Point(this.intermediateNode.x, this.intermediateNode.y)
 		
-		engine.canvas.drawBezier(...bezierParameters)
+		if (this.startNode === this.endNode) { // self loop
+			// If the startNode and intermediateNode are opposite corners of a square, we need
+			// to find the other two corners to make them the control points.
+			const nearPoint = this.startNode.getPoint().positionVector()
+			const farPoint = intermediatePoint.positionVector()
+			
+			const diagonalVector = farPoint.minus(nearPoint)
+			console.log("Diagonal vector is", diagonalVector.length())
+			console.log("vs", diagonalVector.rotate(0).length())
+			
+			const cornerA = nearPoint.add(diagonalVector.rotate(0))
+			const cornerB = nearPoint.add(diagonalVector.rotate(0))
+			
+			engine.canvas.drawCircle(engine.transformation.scalePoint(cornerA.fromOrigin()), 10, "green")
+			engine.canvas.drawCircle(engine.transformation.scalePoint(cornerB.fromOrigin()), 10, "red")
+			
+			bezierParameters = [
+				this.startNode.getPoint(),
+				cornerA.fromOrigin(),
+				cornerB.fromOrigin(),
+				this.endNode.getPoint()
+			]
+		} else {
+			// We can make a quadratic Bezier curve with 3 points, but all Bezier curve functions
+			// only work with cubic curves. We need to repeat one of the control points to simulate this
+			bezierParameters = [
+				this.startNode.getPoint(),
+				intermediatePoint,
+				intermediatePoint,
+				this.endNode.getPoint()
+			]
+		}
 		
-		const endPoint = bezierParameters[2]
-		
-		engine.canvas.arrowAt(bezier(bezierParameters, 0.2), endPoint)
+		bezierParameters = bezierParameters.map(point => engine.transformation.scalePoint(point))		
+		engine.canvas.drawBezier(bezierParameters)
+
+		engine.canvas.arrowAt(bezier(bezierParameters, 0.2), engine.transformation.scalePoint(this.endNode.getPoint()))
 		engine.canvas.drawText(
 			bezier(bezierParameters, 0.5),
 			30,

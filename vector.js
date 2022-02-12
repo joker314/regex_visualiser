@@ -1,8 +1,10 @@
 function unitVectorInDirection (direction) {
-	return new Vector(
+	const unitVector = new Vector(
 		Math.cos(direction),
 		Math.sin(direction)
 	)
+	
+	console.log("unit vector length is", unitVector.length())
 }
 
 export class Vector {
@@ -81,6 +83,10 @@ export class Point {
 		this.y = y
 	}
 	
+	// TODO: increase adoption in legacy code
+	positionVector () {
+		return new Vector(this.x, this.y)
+	}
 	[Symbol.iterator] () {
 		return [this.x, this.y].values()
 	}
