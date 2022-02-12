@@ -17,13 +17,7 @@ import {
 import {Vector} from './vector.js'
 import {Transformation} from './transformation.js'
 
-import {random} from './util.js'
-
-function average(a, b, weight = 0.5) {
-	const antiweight = 1 - weight
-	
-	return (weight * a) + (antiweight * b)
-}
+import {random, average, bezier} from './util.js'
 
 /**
  * Can be used to render arbitrary graphs using a force-directed technique
@@ -312,13 +306,19 @@ export class GraphEdge {
 		} else {
 			engine.drawDownwardCurve(...coordinates)
 		}**/
+		
+		const bezierCoords = [coordinates[0], [this.intermediateNode.x, this.intermediateNode.y], [this.intermediateNode.x, this.intermediateNode.y], coordinates[1]]
+		
 		engine.bezierCurveTo(coordinates[0], [this.intermediateNode.x, this.intermediateNode.y], coordinates[1])
 		
-		engine.arrowAt([average(this.startNode.x, this.endNode.x, 0.3), average(this.startNode.y, this.endNode.y, 0.3)], coordinates[1])
+		engine.arrowAt(bezier(bezierCoords, 0.2), coordinates[1])
+		
+		//console.log("Bezier", bezier([coordinates[0], [this.intermediateNode.x, this.intermediateNode.y], coordinates[1]], 0),
+		//			"vs", coordinates[1])
+		
 		
 		engine.drawText(
-			average(this.startNode.x, this.endNode.x),
-			average(this.startNode.y, this.endNode.y),
+			...bezier(bezierCoords, 0.5),
 			30,
 			this.label
 		)
