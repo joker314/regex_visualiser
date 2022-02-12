@@ -204,8 +204,8 @@ export class GraphEdge {
 			console.log("Diagonal vector is", diagonalVector.length())
 			console.log("vs", diagonalVector.rotate(0).length())
 			
-			const cornerA = nearPoint.add(diagonalVector.rotate(0))
-			const cornerB = nearPoint.add(diagonalVector.rotate(0))
+			const cornerA = nearPoint.add(diagonalVector.rotate(Math.PI / 4))
+			const cornerB = nearPoint.add(diagonalVector.rotate(-Math.PI / 4))
 			
 			engine.canvas.drawCircle(engine.transformation.scalePoint(cornerA.fromOrigin()), 10, "green")
 			engine.canvas.drawCircle(engine.transformation.scalePoint(cornerB.fromOrigin()), 10, "red")
