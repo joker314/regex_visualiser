@@ -87,7 +87,9 @@ export class GraphDrawingEngine {
 		const EVENTS = {
 			"mousedown": event => {
 				this.isMouseDown = true
-				this.fixedNode.fx = this.fixedNode.fy = null
+				if (this.fixedNode) {
+					this.fixedNode.fx = this.fixedNode.fy = null
+				}
 				this.mouseMoved(event)
 			},
 			
@@ -95,7 +97,9 @@ export class GraphDrawingEngine {
 			
 			"mouseup": () => {
 				this.isMouseDown = false
-				this.fixedNode.fx = this.fixedNode.fy = null
+				if (this.fixedNode) {
+					this.fixedNode.fx = this.fixedNode.fy = null
+				}
 				this.simulation.restart()
 			}
 		}
