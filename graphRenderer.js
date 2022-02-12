@@ -47,16 +47,14 @@ export class GraphDrawingEngine {
 		const intermediateNodes = this.graphEdges.map(edge => edge.intermediateNode)
 
 		this.simulation = forceSimulation(this.graphNodes.concat(intermediateNodes))
-			.force("link", forceLink(d3GraphEdges).distance(90))
-			.force("charge", forceManyBody().strength(node => {
-				// In self-loops, the intermediate node is being pulled on with double the strength
-				// so let's increase the repulsive force to account for that
-				if (node.isSelf) {
-					return -90
+			.force("link", forceLink(d3GraphEdges).distance(edge => {
+				if (edge.source.isSelf || edge.target.isSelf) {
+					return 180
+				} else {
+					return 90
 				}
-				
-				return -30
 			}))
+			.force("charge", forceManyBody())
 			.force("center", forceCenter())
 			.force("collide", forceCollide(30).iterations(20))
 			.on("tick", this.render.bind(this))
