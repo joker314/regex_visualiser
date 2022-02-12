@@ -40,9 +40,9 @@ export class Canvas {
 	
 	arrowAt (position, towards) {
 		const ARROW_SHAPE = [
-			new Vector(0, -20),
-			new Vector(0, 20),
-			new Vector(40, 0)
+			new Vector(0, -5),
+			new Vector(0, 5),
+			new Vector(10, 0)
 		]
 		
 		//console.log("Position", position)
