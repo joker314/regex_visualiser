@@ -207,8 +207,8 @@ export class GraphEdge {
 			const cornerA = nearPoint.add(diagonalVector.rotate(Math.PI / 4))
 			const cornerB = nearPoint.add(diagonalVector.rotate(-Math.PI / 4))
 			
-			engine.canvas.drawCircle(engine.transformation.scalePoint(cornerA.fromOrigin()), 10, "green")
-			engine.canvas.drawCircle(engine.transformation.scalePoint(cornerB.fromOrigin()), 10, "red")
+			//engine.canvas.drawCircle(engine.transformation.scalePoint(cornerA.fromOrigin()), 10, "green")
+			//engine.canvas.drawCircle(engine.transformation.scalePoint(cornerB.fromOrigin()), 10, "red")
 			
 			bezierParameters = [
 				this.startNode.getPoint(),
