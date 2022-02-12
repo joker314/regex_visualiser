@@ -4,7 +4,8 @@ function unitVectorInDirection (direction) {
 		Math.sin(direction)
 	)
 	
-	console.log("unit vector length is", unitVector.length())
+	//console.log("unit vector length is", unitVector.length())
+	return unitVector
 }
 
 export class Vector {
@@ -60,7 +61,7 @@ export class Vector {
 	length () {
 		const sumOfSquares = this.components.reduce((partialSum, currentComponent) => {
 			return partialSum + (currentComponent * currentComponent)
-		})
+		}, 0)
 		
 		return Math.sqrt(sumOfSquares)
 	}
@@ -69,7 +70,11 @@ export class Vector {
 		const newDirection = this.angle() + angle
 		const newLength = this.length() // rotating a vector doesn't change its length
 
-		return unitVectorInDirection(newDirection).scale(newLength)
+		const unitV = unitVectorInDirection(newDirection)
+		const scaledV = unitV.scale(newLength)
+		
+		//console.log(unitV.length(), "scaled by", newLength, "so now", scaledV.length(), unitV, scaledV)
+		return scaledV
 	}
 	
 	fromOrigin () {
