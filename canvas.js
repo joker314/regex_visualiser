@@ -11,11 +11,19 @@ export class Canvas {
 		this.ctx.clearRect(0, 0, this.el.width, this.el.height)	
 	}
 	
-	drawCircle (point, radius, fillCol) {
+	drawLine (start, end, color) {
 		this.ctx.beginPath()
-		this.ctx.fillStyle = fillCol
+		this.ctx.strokeStyle = color
+		this.ctx.moveTo(start.x, start.y)
+		this.ctx.lineTo(end.x, end.y)
+		this.ctx.stroke()
+	}
+	
+	drawCircle (point, radius, strokeCol) {
+		this.ctx.beginPath()
+		this.ctx.strokeStyle = strokeCol
 		this.ctx.arc(point.x, point.y, radius, 0, 2 * Math.PI)
-		this.ctx.fill()
+		this.ctx.stroke()
 	}
 	
 	drawBezier (bezierParameters) {
@@ -38,7 +46,7 @@ export class Canvas {
 		this.ctx.fillText(text, point.x, point.y)
 	}
 	
-	arrowAt (position, towards) {
+	arrowAt (position, towards, color = "black") {
 		const ARROW_SHAPE = [
 			new Vector(0, -5),
 			new Vector(0, 5),
@@ -56,7 +64,7 @@ export class Canvas {
 		)
 		
 		this.ctx.beginPath()
-		this.ctx.fillStyle = "black"
+		this.ctx.fillStyle = color
 		
 		//console.log("this", this, GraphDrawingEngine, this.transformation, this.transformation.scalePosition)
 		
@@ -66,7 +74,7 @@ export class Canvas {
 			.map(vector => vector.fromOrigin())
 			
 		this.ctx.beginPath()
-		this.ctx.fillStyle = "black"
+		this.ctx.fillStyle = color
 		this.ctx.moveTo(...coordinates[0])
 		
 		coordinates.forEach(coordinate => {

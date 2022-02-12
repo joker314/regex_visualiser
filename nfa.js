@@ -315,7 +315,7 @@ export class NFA {
 				const xCoord = xInterval * (1 + horizontalIndex)
 				const yCoord = yInterval * (1 + verticalIndex)
 				// TODO: textual label
-				node.graphNode = new GraphNode(xCoord, yCoord, node.isAcceptingState ? "pink" : "orange")
+				node.graphNode = new GraphNode(xCoord, yCoord, node.isAcceptingState, node.isStartState)
 
 				nodeObjects.push(node.graphNode)
 			}

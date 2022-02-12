@@ -137,10 +137,11 @@ export class GraphDrawingEngine {
  * Represents a node
  */
 export class GraphNode {
-	constructor (x, y, color = "orange", label = "") {
+	constructor (x, y, isAccepting, isStarting, label = "") {
 		this.x = x
 		this.y = y
-		this.color = color
+		this.isAccepting = isAccepting
+		this.isStarting = isStarting
 		this.label = label
 		// TODO: this.label unused
 	}
@@ -153,7 +154,27 @@ export class GraphNode {
 		//console.log(engine)
 		const position = engine.transformation.scalePoint(this.getPoint())
 		
-		engine.canvas.drawCircle(position, 30, this.color)
+		engine.canvas.drawCircle(position, 30, "orange")
+		
+		// Add a double border if it's an accepting state
+		if (this.isAccepting) {
+			engine.canvas.drawCircle(position, 25, "orange")
+		}
+		
+		// Add an inward orange arrow if it's the starting state
+		if (this.isStarting) {
+			// TODO: repetetive, can we abstract?
+			const topLeft = engine.transformation.scalePoint(this.getPoint().positionVector().add(
+				new Vector(0, 60).rotate(3 * Math.PI / 4)
+			).fromOrigin())
+			
+			const bottomRight = engine.transformation.scalePoint(this.getPoint().positionVector().add(
+				new Vector(0, 20).rotate(3 * Math.PI / 4)
+			).fromOrigin())
+			
+			engine.canvas.drawLine(topLeft, bottomRight, "orange")
+			engine.canvas.arrowAt(bottomRight, engine.transformation.scalePoint(this.getPoint()), "orange")
+		}
 	}
 }
 
