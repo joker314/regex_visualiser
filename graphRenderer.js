@@ -72,7 +72,7 @@ export class GraphDrawingEngine {
 		this.graphEdges.forEach(edge => {
 			edge.render(this, timestamp)
 			// DEBUG TODO
-			this.canvas.drawCircle(this.transformation.scalePoint(edge.intermediateNode), 10, "black")
+			//this.canvas.drawCircle(this.transformation.scalePoint(edge.intermediateNode), 10, "black")
 		})
 	}
 	
@@ -110,7 +110,7 @@ export class GraphDrawingEngine {
 			return
 		}
 		
-		console.log("Movement!")
+		//console.log("Movement!")
 		
 		const rectangle = this.canvas.el.getBoundingClientRect()
 		
@@ -201,8 +201,8 @@ export class GraphEdge {
 			const farPoint = intermediatePoint.positionVector()
 			
 			const diagonalVector = farPoint.minus(nearPoint)
-			console.log("Diagonal vector is", diagonalVector.length())
-			console.log("vs", diagonalVector.rotate(0).length())
+			//console.log("Diagonal vector is", diagonalVector.length())
+			//console.log("vs", diagonalVector.rotate(0).length())
 			
 			const cornerA = nearPoint.add(diagonalVector.rotate(Math.PI / 4))
 			const cornerB = nearPoint.add(diagonalVector.rotate(-Math.PI / 4))
