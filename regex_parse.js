@@ -31,7 +31,7 @@ regexInputBox.addEventListener("input", () => {
 		// Before drawing the graph, it's good to simplify it a lot by eliminating null transitions
 		currentNFA.eliminateNullTransitions()
 		currentNFA.makeDFA()
-		currentNFA.minimizeDFA()
+		//currentNFA.minimizeDFA()
 		currentEngine = new GraphDrawingEngine(nfaPicture, ...currentNFA.createGraph(nfaPicture.height, nfaPicture.width))
 	}
 })

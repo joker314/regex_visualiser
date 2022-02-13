@@ -74,7 +74,7 @@ export class NFA {
 			fromState.transitions[inputSymbol].add(toState)
 		}
 		
-		if (!toState.inverseTransitions[inputSymbol]) {
+		if (!toState.inverseTransitions[inputSymbol].has(fromState)) {
 			toState.inverseTransitions[inputSymbol].add(fromState)
 		}
     }
@@ -152,6 +152,7 @@ export class NFA {
 		// from the NFA object, so it will be garabage collected soon (as long as the programmer has not created
 		// a reference to it somewhere else)
 		this.stateSet.delete(stateToDelete)
+		console.log("A state was removed, so there are now", this.stateSet.size)
 	}
 	
 	// TODO: use this method more in regex_parse.js
@@ -271,6 +272,8 @@ export class NFA {
 				const bTransitions = stateB.getNextStates(symbol)
 				
 				if (aTransitions.size > 1 || bTransitions.size > 1) {
+					console.error("a transitions are", aTransitions)
+					console.error("b transitions are", bTransitions)
 					throw new Error("Tried to minimise an NFA (not a DFA)") 
 				}
 				
@@ -442,6 +445,8 @@ export class NFA {
 }
 
 export class NFAState {
+	static idNum = 0
+	
     constructor (humanName, isStartState, isAcceptingState, transitions = {}, inverseTransitions = {}, indegree = 0) {
         this.humanName = humanName
         this.isStartState = isStartState
@@ -449,6 +454,7 @@ export class NFAState {
         this.transitions = transitions
 		this.inverseTransitions = inverseTransitions
 		this.indegree = indegree
+		this.id = NFAState.idNum++
     }
     
     getNextStates (inputSymbol) {
