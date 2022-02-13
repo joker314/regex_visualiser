@@ -1,4 +1,5 @@
 import {GraphNode, GraphEdge} from './graphRenderer.js'
+import {invertMap} from './util.js'
 
 function enumerate (arr) {
 	/**
@@ -66,10 +67,15 @@ export class NFA {
     
     registerTransition (fromState, inputSymbol, toState) {
         fromState.transitions[inputSymbol] ||= new Set() // if not yet defined, create it
+		toState.inverseTransitions[inputSymbol] ||= new Set()
 		
 		if (!fromState.transitions[inputSymbol].has(toState)) {
 			toState.indegree++
 			fromState.transitions[inputSymbol].add(toState)
+		}
+		
+		if (!toState.inverseTransitions[inputSymbol]) {
+			toState.inverseTransitions[inputSymbol].add(fromState)
 		}
     }
     
@@ -78,6 +84,7 @@ export class NFA {
 			if (fromState.transitions[inputSymbol].has(toState)) {
 				toState.indegree--
 				fromState.transitions[inputSymbol].delete(toState)
+				toState.inverseTransitions[inputSymbol].delete(fromState)
 				//debugger;
 			}
 			
@@ -253,6 +260,98 @@ export class NFA {
 		})
 	}
 	
+	minimizeDFA () {
+		// https://www.geeksforgeeks.org/minimization-of-dfa/
+		
+		const alphabet = Array.from(this.alphabet)
+		
+		function canDistinguish(stateA, stateB) {
+			return alphabet.some(symbol => {
+				const aTransitions = stateA.getNextStates(symbol)
+				const bTransitions = stateB.getNextStates(symbol)
+				
+				if (aTransitions.size > 1 || bTransitions.size > 1) {
+					throw new Error("Tried to minimise an NFA (not a DFA)") 
+				}
+				
+				if (aTransitions.size === 0 && bTransitions.size === 0) {
+					return false
+				}
+				
+				if (aTransitions.size !== bTransitions.size) {
+					return true
+				}
+				
+				return [...aTransitions][0] !== [...bTransitions][0]
+			})
+		}
+		
+		let dirty = true
+		
+		const acceptingSymbol = Symbol("accepting")
+		const nonAcceptingSymbol = Symbol("non-accepting")
+		
+		// TODO: more efficient
+		let currentPartition = [
+			new Set(Array.from(this.stateSet).filter(state => state.isAcceptingState)),
+			new Set(Array.from(this.stateSet).filter(state => !state.isAcceptingState))
+		]
+		
+		while (dirty) {
+			dirty = false
+			const nextPartition = []
+			
+			for (let subset of currentPartition) {
+				const newPartition = {}
+				
+				for (let itemUnderProcessing of subset) {
+					let hashOfItem = ""
+					
+					for (let comparisonItem of subset) {
+						hashOfItem += canDistinguish(itemUnderProcessing, comparisonItem) ? "1" : "0"
+					}
+					
+					if (!newPartition.hasOwnProperty(hashOfItem)) {
+						newPartition[hashOfItem] = new Set()
+					}
+					
+					newPartition[hashOfItem].add(itemUnderProcessing)
+				}
+				
+				if (smallerSubset.size === 0) {
+					throw new Error("Didn't expect a subset to be 0")
+				} else if (smallerSubset.size > 1) {
+					dirty = true
+				}
+				
+				for (let smallerSubset of Object.values(newPartition)) {
+					nextPartition.push(smallerSubset)
+				}					
+			}
+			
+			currentPartition = nextPartition
+		}
+		
+		// Merge all the states that have been partitioned into the same subset
+		for (let subset of currentPartition) {
+			// TODO: abstract into separate method / spot the difference with mergeStates
+			const [representativeState, ...otherStates] = subset
+			
+			for (let otherState of otherStates) {
+				// Add any references FROM other states into the representative state
+				this.mergeStates(otherState, representativeState)
+				
+				// Replace any references TO the other states with references to the representative state
+				otherState.inverseTransitions.forEach(([symbol, backwardsStates]) => {
+					for (let backwardsState of backwardsStates) {
+						backwardsState[symbol].delete(otherState)
+						backwardsState[symbol].add(representativeState)
+					}
+				})
+			}
+		}
+	}
+	
     // Determines whether or not the NFA is in an accepting state. Usually called once all
 	// the input has been consumed -- but doesn't have to be.
     finish () {
@@ -339,11 +438,12 @@ export class NFA {
 }
 
 export class NFAState {
-    constructor (humanName, isStartState, isAcceptingState, transitions = {}, indegree = 0) {
+    constructor (humanName, isStartState, isAcceptingState, transitions = {}, inverseTransitions = {}, indegree = 0) {
         this.humanName = humanName
         this.isStartState = isStartState
         this.isAcceptingState = isAcceptingState
         this.transitions = transitions
+		this.inverseTransitions = inverseTransitions
 		this.indegree = indegree
     }
     

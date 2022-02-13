@@ -36,6 +36,35 @@ export function bezier(points, t) {
 	return bezier(nextPoints, t)
 }
 
-export function bezierDeriv(startX, startY, controlX, controlY, endX, endY) {
+export function invertMap (obj) {
+	const inverseObj = {}
 	
+	for (let [key, value] of Object.entries(obj)) {
+		if (!inverseObj.hasOwnProperty(value)) {
+			inverseObj[value] = new Set()
+		}
+		
+		inverseObj[value].add(key)
+	}
+}
+
+// Computes the Cartesian product of two sets
+export function* product (A, B) {
+	for (let aItem of A) {
+		for (let bItem of B) {
+			yield [aItem, bItem]
+		}
+	}
+	return
+}
+
+// TODO: consider implementing by subclassing Set?
+export function setsEqual(setA, setB) {
+	// Check that set A and B have the same size
+	if (setA.size !== setB.size) {
+		return false
+	}
+	
+	// Check that set A is a subset of set B
+	return Array.from(setA).every(aItem => setB.has(aItem))
 }
