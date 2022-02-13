@@ -212,11 +212,11 @@ export class NFA {
     // If A --x--> B --(null)--> C, then to remove the null transition
     // we must create a transition A --x--> C, and then eliminate the transition
     // B --(null)--> C
-    eliminateNullTransitions () {
+    eliminateNullTransitions (states = this.stateSet) {
 		// Note that although this.stateSet is mutated by the callback function provided, this is okay
 		// because 23.2.3.6 of the ECMA specification guarantees that new items added to the set will still
 		// be traversed.
-		this.stateSet.forEach(state => {
+		states.forEach(state => {
 			let nullChildren; // the set of states which are just an epsilon-transition away from the current state
 			
 			while ((nullChildren = state.getNextStates("")).size) {				
@@ -238,6 +238,30 @@ export class NFA {
 			let dirty = true
 			
 			while (dirty) {
+				let didCreateNullTransitions = false
+				
+				for (let [transitionSymbol, childStates] of Object.entries(state.transitions)) {
+					// TODO: find a way to reduce nesting
+					if (childStates.has(state) && childStates.size > 1) {
+						for (let childState of childStates) {
+							if (childState === state) {
+								continue
+							}
+							
+							// a*a is the same as a*
+							this.unregisterTransition(state, transitionSymbol, childState)
+							this.registerTransition(state, "", childState)
+							didCreateNullTransitions = true
+						}
+					}
+				}
+				
+				if (didCreateNullTransitions) {
+					this.eliminateNullTransitions([state])
+					dirty = true
+					continue
+				}
+				
 				dirty = false
 				
 				Object.entries(state.transitions).forEach(([transitionSymbol, childStates]) => {
