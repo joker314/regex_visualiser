@@ -295,9 +295,10 @@ export class NFA {
 		let currentPartition = [
 			new Set(Array.from(this.stateSet).filter(state => state.isAcceptingState)),
 			new Set(Array.from(this.stateSet).filter(state => !state.isAcceptingState))
-		]
+		].filter(set => set.size)
 		
 		while (dirty) {
+			console.log("Current partition is", currentPartition)
 			dirty = false
 			const nextPartition = []
 			
@@ -318,9 +319,9 @@ export class NFA {
 					newPartition[hashOfItem].add(itemUnderProcessing)
 				}
 				
-				if (smallerSubset.size === 0) {
+				if (Object.keys(newPartition).length === 0) {
 					throw new Error("Didn't expect a subset to be 0")
-				} else if (smallerSubset.size > 1) {
+				} else if (Object.keys(newPartition).length > 1) {
 					dirty = true
 				}
 				
@@ -332,6 +333,8 @@ export class NFA {
 			currentPartition = nextPartition
 		}
 		
+		console.log("Final partition was", currentPartition)
+		return;
 		// Merge all the states that have been partitioned into the same subset
 		for (let subset of currentPartition) {
 			// TODO: abstract into separate method / spot the difference with mergeStates
@@ -342,10 +345,11 @@ export class NFA {
 				this.mergeStates(otherState, representativeState)
 				
 				// Replace any references TO the other states with references to the representative state
-				otherState.inverseTransitions.forEach(([symbol, backwardsStates]) => {
+				console.log("other state is", otherState)
+				Object.entries(otherState.inverseTransitions).forEach(([symbol, backwardsStates]) => {
 					for (let backwardsState of backwardsStates) {
-						backwardsState[symbol].delete(otherState)
-						backwardsState[symbol].add(representativeState)
+						this.unregisterTransition(backwardsState, symbol, otherState)
+						this.registerTransition(backwardsState, symbol, representativeState)
 					}
 				})
 			}
