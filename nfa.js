@@ -238,7 +238,7 @@ export class NFA {
 			let dirty = true
 			
 			while (dirty) {
-				let didCreateNullTransitions = false
+				let didHandleSelfLoop = false
 				
 				for (let [transitionSymbol, childStates] of Object.entries(state.transitions)) {
 					// TODO: find a way to reduce nesting
@@ -248,9 +248,12 @@ export class NFA {
 								continue
 							}
 							
-							// a*a is the same as a*
+							// a*a is the same as aa*.
 							this.unregisterTransition(state, transitionSymbol, childState)
 							this.registerTransition(state, "", childState)
+							
+							const newPrefixState = new NFAState("(rewritten extra state)", false, this.isAcceptingState)
+							
 							didCreateNullTransitions = true
 						}
 					}
