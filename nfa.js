@@ -234,58 +234,11 @@ export class NFA {
 	 * If currently the sets are bigger, we merge them.
 	 */
     makeDFA () {
+		// https://www.javatpoint.com/automata-conversion-from-nfa-to-dfa
+		
 		this.stateSet.forEach(state => {
-			let dirty = true
-			
-			while (dirty) {
-				let didHandleSelfLoop = false
-				
-				for (let [transitionSymbol, childStates] of Object.entries(state.transitions)) {
-					// TODO: find a way to reduce nesting
-					if (childStates.has(state) && childStates.size > 1) {
-						for (let childState of childStates) {
-							if (childState === state) {
-								continue
-							}
-							
-							// a*a is the same as aa*.
-							this.unregisterTransition(state, transitionSymbol, childState)
-							this.registerTransition(state, "", childState)
-							
-							const newPrefixState = new NFAState("(rewritten extra state)", false, this.isAcceptingState)
-							
-							didCreateNullTransitions = true
-						}
-					}
-				}
-				
-				if (didCreateNullTransitions) {
-					this.eliminateNullTransitions([state])
-					dirty = true
-					continue
-				}
-				
-				dirty = false
-				
-				Object.entries(state.transitions).forEach(([transitionSymbol, childStates]) => {
-					if (childStates.size > 1) {
-						dirty = true
-						
-						// If `state` has a transition into itself, we would prefer to merge into that. But in any other
-						// case, we will pick an arbitrary state to merge into - perhaps the first one.
-						const mergeTarget = childStates.has(state) ? state : childStates.values().next().value
-
-						// The merge method will do validation to skip over self-merges, so we don't need to check that here
-						childStates.forEach(childState => {
-							if (childState !== mergeTarget) {
-								this.mergeStates(childState, mergeTarget)
-								this.unregisterTransition(state, transitionSymbol, childState)
-							}
-						})
-					}
-				})
-			}
-		})
+		
+		}
 	}
 	
 	minimizeDFA () {
