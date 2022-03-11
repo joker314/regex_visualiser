@@ -235,10 +235,50 @@ export class NFA {
 	 */
     makeDFA () {
 		// https://www.javatpoint.com/automata-conversion-from-nfa-to-dfa
+		const unprocessedStates = []
 		
-		this.stateSet.forEach(state => {
+		const newStartState = new NFAState("DFA start", true, false)
+		newStartState.originalStates.push(this.startState)
 		
+		const newDFA = new NFA(newStartState, [newStartState], this.alphabet) // TODO: alphabet may shrink with unreachable states
+		const statesToProcess = [newStartState]
+		
+		// TODO: use a real hashtable
+		const hashTable = {}
+		
+		// TODO: switch to queue
+		// TODO: consider making sure each state is created once, where states can be distinguished by
+		// their originalStates array
+		while (statesToProcess.length) {
+			const currentState = statesToProcess.pop()
+			
+			for (let symbol of this.alphabet) {
+				const stateCombinations = []
+				
+				for (let originalState of currentState.originalStates) {
+					for (let otherState of originalState.getNextStates(symbol)) {
+						stateCombinations.push(otherState)
+					}
+				}
+				
+				if (stateCombinations.length) {
+					const isAcceptingState = stateCombinations.some(state => state.isAcceptingState)
+					
+					const nextState = new NFAState("", false, isAcceptingState)
+					nextState.originalStates = stateCombinations
+					
+					if (!hashTable.hasOwnProperty(nextState.hashOriginalStates())) {
+						hashTable[nextState.hashOriginalStates()] = nextState
+						statesToProcess.unshift(nextState) // TODO: not good complexity, always push to end!
+					}
+					
+					hashTable[nextState.hashOriginalStates()] = nextState // make sure we don't create this state again later
+					newDFA.registerTransition(currentState, symbol, nextState)
+				}
+			}
 		}
+		
+		return newDFA
 	}
 	
 	minimizeDFA () {
@@ -435,6 +475,10 @@ export class NFAState {
 		this.inverseTransitions = inverseTransitions
 		this.indegree = indegree
 		this.id = NFAState.idNum++
+		
+		// For DFA states:
+		// TODO: rename to be more clear
+		this.originalStates = []
     }
     
     getNextStates (inputSymbol) {
@@ -444,4 +488,9 @@ export class NFAState {
             return this.transitions[inputSymbol]
         }
     }
+	
+	// TODO: rename? make subclass for DFA states?
+	hashOriginalStates () {
+		return this.originalStates.map(state => state.id).sort().join(" ")
+	}
 }
