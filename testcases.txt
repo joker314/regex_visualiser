@@ -1,0 +1,5 @@
+Useful test cases:
+
+a* - make sure the start and end states can coincide
+ba*b - make sure minimisation doesn't cause garbling
+a? - make sure the question mark operator is handled correctly
