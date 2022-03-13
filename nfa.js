@@ -251,6 +251,7 @@ export class NFA {
 		// their originalStates array
 		while (statesToProcess.length) {
 			const currentState = statesToProcess.pop()
+			console.log("Now processing", currentState)
 			
 			for (let symbol of this.alphabet) {
 				const stateCombinations = []
@@ -264,7 +265,7 @@ export class NFA {
 				if (stateCombinations.length) {
 					const isAcceptingState = stateCombinations.some(state => state.isAcceptingState)
 					
-					const nextState = new NFAState("", false, isAcceptingState)
+					let nextState = new NFAState("", false, isAcceptingState)
 					nextState.originalStates = stateCombinations
 					
 					if (!hashTable.hasOwnProperty(nextState.hashOriginalStates())) {
@@ -272,12 +273,13 @@ export class NFA {
 						statesToProcess.unshift(nextState) // TODO: not good complexity, always push to end!
 					}
 					
-					hashTable[nextState.hashOriginalStates()] = nextState // make sure we don't create this state again later
+					nextState = hashTable[nextState.hashOriginalStates()] // make sure we don't create this state again later
 					newDFA.registerTransition(currentState, symbol, nextState)
 				}
 			}
 		}
 		
+		console.log("Hash table keys are", Object.keys(hashTable))
 		return newDFA
 	}
 	

@@ -88,6 +88,8 @@ export class GraphDrawingEngine {
 		for (let [eventName, listener] of this.listeners) {
 			this.canvas.el.removeEventListener(eventName, listener)
 		}
+		
+		this.simulation.stop()
 	}
 	
 	registerEventListeners () {
