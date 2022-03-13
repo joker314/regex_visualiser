@@ -287,99 +287,73 @@ export class NFA {
 	minimizeDFA () {
 		// https://www.geeksforgeeks.org/minimization-of-dfa/
 		
-		const alphabet = Array.from(this.alphabet)
-		
-		function canDistinguish(stateA, stateB) {
-			return alphabet.some(symbol => {
-				const aTransitions = stateA.getNextStates(symbol)
-				const bTransitions = stateB.getNextStates(symbol)
-				
-				if (aTransitions.size > 1 || bTransitions.size > 1) {
-					console.error("a transitions are", aTransitions)
-					console.error("b transitions are", bTransitions)
-					throw new Error("Tried to minimise an NFA (not a DFA)") 
-				}
-				
-				if (aTransitions.size === 0 && bTransitions.size === 0) {
-					return false
-				}
-				
-				if (aTransitions.size !== bTransitions.size) {
-					return true
-				}
-				
-				return [...aTransitions][0] !== [...bTransitions][0]
-			})
-		}
-		
+		// All the states that are accepting states are definitely different to the non-accepting states.
+		// So we begin by using that as the partition criteria.
+		let currentPartition = new Partition(this.stateSet, state => state.isAcceptingState)
 		let dirty = true
 		
-		const acceptingSymbol = Symbol("accepting")
-		const nonAcceptingSymbol = Symbol("non-accepting")
-		
-		// TODO: more efficient
-		let currentPartition = [
-			new Set(Array.from(this.stateSet).filter(state => state.isAcceptingState)),
-			new Set(Array.from(this.stateSet).filter(state => !state.isAcceptingState))
-		].filter(set => set.size)
-		
+		// First, find out which states can be merged into one
 		while (dirty) {
-			console.log("Current partition is", currentPartition)
-			dirty = false
-			const nextPartition = []
+			dirty = false // if there are no changes made in this iteration, dirty will stay false and we will exit the loop
 			
-			for (let subset of currentPartition) {
-				const newPartition = {}
+			for (let stateSet of currentPartition) {
+				// Currently, stateSet is thought to be a set of indistinguishable states.
+				// We should try to refine this by finding pairs of states that behave differently
+				// for the same input symbol.
 				
-				for (let itemUnderProcessing of subset) {
-					let hashOfItem = ""
+				// Each state can be given a code. The jth character in the ith code says whether or not
+				// states i and j are distinguishable. Two states need to have exactly the same codes in order
+				// to continue being in the same set of the partition.
+				const subPartition = new Partition(stateSet, state => {
+					let code = ''
 					
-					for (let comparisonItem of subset) {
-						hashOfItem += canDistinguish(itemUnderProcessing, comparisonItem) ? "1" : "0"
+					for (let otherState of stateSet) {
+						if (currentPartition.canDistinguish(state, otherState)) {
+							code += 'Y'
+						} else {
+							code += 'N'
+						}
 					}
 					
-					if (!newPartition.hasOwnProperty(hashOfItem)) {
-						newPartition[hashOfItem] = new Set()
-					}
-					
-					newPartition[hashOfItem].add(itemUnderProcessing)
-				}
+					return code
+				})
 				
-				if (Object.keys(newPartition).length === 0) {
-					throw new Error("Didn't expect a subset to be 0")
-				} else if (Object.keys(newPartition).length > 1) {
+				// Check if this new partition is actually different to the old partition. If it is, then
+				// update the partition and set dirty to true again
+				if (!subPartition.isTrivial) {
 					dirty = true
+					
+					currentPartition.removeSet(stateSet)
+					for (let subSet of subPartition) {
+						currentPartition.addSet(subSet.collectionOfSets)
+					}
 				}
-				
-				for (let smallerSubset of Object.values(newPartition)) {
-					nextPartition.push(smallerSubset)
-				}					
 			}
-			
-			currentPartition = nextPartition
 		}
 		
-		console.log("Final partition was", currentPartition)
-		return;
-		// Merge all the states that have been partitioned into the same subset
-		for (let subset of currentPartition) {
-			// TODO: abstract into separate method / spot the difference with mergeStates
-			const [representativeState, ...otherStates] = subset
-			
-			for (let otherState of otherStates) {
-				// Add any references FROM other states into the representative state
-				this.mergeStates(otherState, representativeState)
+		// Now create a new DFA which merges all the states that have been determined to be indistinguishable
+		const getMergedState = {}
+		
+		// TODO: make currentPartition an iterator to avoid this clunky reference
+		for (let set of currentPartition.collectionOfSets) {
+			const isStartState = [...set].some(state => state.isStartState)
+			const isAcceptingState = [...set].some(state => state.isAcceptingState)
+			getMergedState[set] = new NFAState("", isStartState, isAcceptingState)
+		}
+		
+		const mergedStartState = getMergedState[currentPartition.stateToID[this.startState]]
+		const minimizedDFA = new NFA(mergedStartState, Object.values(getMergedState), this.alphabet)
+		
+		for (let state of this.stateSet) {
+			for (let [transitionSymbol, childStates] of state.transitions) {
+				const mergedOrigin = getMergedState[state]
+				const mergedDestination = getMergedState[childStates[0]] // it's a DFA, so only one child state
 				
-				// Replace any references TO the other states with references to the representative state
-				console.log("other state is", otherState)
-				Object.entries(otherState.inverseTransitions).forEach(([symbol, backwardsStates]) => {
-					for (let backwardsState of backwardsStates) {
-						this.unregisterTransition(backwardsState, symbol, otherState)
-						this.registerTransition(backwardsState, symbol, representativeState)
-					}
-				})
+				minimizedDFA.registerTransition(mergedOrigin, transitionSymbol, mergedDestination)
 			}
 		}
+		
+		return minimizedDFA
 	}
 	
     // Determines whether or not the NFA is in an accepting state. Usually called once all
@@ -495,5 +469,61 @@ export class NFAState {
 	// TODO: rename? make subclass for DFA states?
 	hashOriginalStates () {
 		return [...new Set(this.originalStates)].map(state => state.id).sort().join(" ")
+	}
+}
+
+class Partition {
+	constructor (states, indicator) {
+		this.collectionOfSets = new Set()
+		this.stateToID = new Map() // maps to sets, which are objects and so always unique
+		
+		const indicationToSet = new Map()
+		
+		for (let state of states) {
+			const indication = indicator(state) // compute here once in case indicator is an expensive call
+			
+			if (!indicationToSet.has(state)) {
+				indicationToSet.set(indication, new Set())
+			}
+			
+			indicationToSet.get(indication).add(state)
+		}
+		
+		// Add the sets one at a time, making sure to make an entry in the lookup table as we go:
+		for (let set of indicationToSet.values()) {
+			this.addSet(set)
+		}
+	}
+	
+	removeSet (set) {
+		this.collectionOfSets.remove(set)
+		
+		for (let state of set) {
+			this.stateToID.delete(state)
+		}
+	}
+	
+	addSet (set) {
+		this.collectionOfSets.add(set)
+		console.log("Given set is", set)
+		
+		for (let state of set) {
+			this.stateToID.set(state, set) // sets are objects, so are unique, and so can be used as IDs
+		}
+	}
+	
+	static fromPredicate (states, predicate) {
+		const ifYes = new Set()
+		const ifNo = new Set()
+		
+		for (let state of states) {
+			if (predicate(state)) {
+				ifYes.add(state)
+			} else {
+				ifNo.add(state)
+			}
+		}
+		
+		return new Partition([ifYes, ifNo])
 	}
 }
