@@ -311,13 +311,14 @@ export class NFA {
 					let code = ''
 					
 					for (let otherState of stateSet) {
-						if (currentPartition.canDistinguish(state, otherState)) {
+						if (currentPartition.canDistinguish([...this.alphabet], state, otherState)) {
 							code += 'Y'
 						} else {
 							code += 'N'
 						}
 					}
 					
+					console.log("Code for state", state, "is", code)
 					return code
 				})
 				
@@ -331,6 +332,8 @@ export class NFA {
 						currentPartition.addSet(subSet)
 					}
 				}
+				
+				console.log("Layout is", [...currentPartition.collectionOfSets].map(set => set.size))
 			}
 		}
 		
@@ -533,8 +536,14 @@ class Partition {
 		}
 	}
 	
-	canDistinguish (stateA, stateB) {
-		return this.stateToID.get(stateA) !== this.stateToID.get(stateB)
+	canDistinguish (alphabet, stateA, stateB) {
+		console.log("Using", alphabet, "as the alphabet")
+		return alphabet.some(symbol => {
+			const stateAChild = [...stateA.getNextStates(symbol)][0]
+			const stateBChild = [...stateB.getNextStates(symbol)][0]
+			console.log("Under", symbol, "A's next state is", stateAChild, "but B's next state is", stateBChild)
+			return this.stateToID.get(stateAChild) !== this.stateToID.get(stateBChild)
+		})
 	}
 	
 	isTrivial () {
