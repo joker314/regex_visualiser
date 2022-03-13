@@ -237,7 +237,7 @@ export class NFA {
 		// https://www.javatpoint.com/automata-conversion-from-nfa-to-dfa
 		const unprocessedStates = []
 		
-		const newStartState = new NFAState("DFA start", true, false)
+		const newStartState = new NFAState("DFA start", true, this.startState.isAcceptingState)
 		newStartState.originalStates.push(this.startState)
 		
 		const newDFA = new NFA(newStartState, [newStartState], this.alphabet) // TODO: alphabet may shrink with unreachable states
@@ -275,7 +275,6 @@ export class NFA {
 					}
 					
 					nextState = hashTable[nextState.hashOriginalStates()] // make sure we don't create this state again later
-					nextState.isAcceptingState = isAcceptingState // there are cases (e.g. the start state) where this hasn't been recorded yet
 					
 					newDFA.registerTransition(currentState, symbol, nextState)
 					newDFA.stateSet.add(nextState)
