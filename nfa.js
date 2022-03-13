@@ -245,6 +245,7 @@ export class NFA {
 		
 		// TODO: use a real hashtable
 		const hashTable = {}
+		hashTable[newStartState.hashOriginalStates()] = newStartState
 		
 		// TODO: switch to queue
 		// TODO: consider making sure each state is created once, where states can be distinguished by
@@ -493,6 +494,6 @@ export class NFAState {
 	
 	// TODO: rename? make subclass for DFA states?
 	hashOriginalStates () {
-		return this.originalStates.map(state => state.id).sort().join(" ")
+		return [...new Set(this.originalStates)].map(state => state.id).sort().join(" ")
 	}
 }
