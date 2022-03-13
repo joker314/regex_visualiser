@@ -275,7 +275,10 @@ export class NFA {
 					}
 					
 					nextState = hashTable[nextState.hashOriginalStates()] // make sure we don't create this state again later
+					nextState.isAcceptingState = isAcceptingState // there are cases (e.g. the start state) where this hasn't been recorded yet
+					
 					newDFA.registerTransition(currentState, symbol, nextState)
+					newDFA.stateSet.add(nextState)
 				}
 			}
 		}
@@ -296,7 +299,7 @@ export class NFA {
 		while (dirty) {
 			dirty = false // if there are no changes made in this iteration, dirty will stay false and we will exit the loop
 			
-			for (let stateSet of currentPartition) {
+			for (let stateSet of currentPartition.collectionOfSets) {
 				// Currently, stateSet is thought to be a set of indistinguishable states.
 				// We should try to refine this by finding pairs of states that behave differently
 				// for the same input symbol.
@@ -320,35 +323,53 @@ export class NFA {
 				
 				// Check if this new partition is actually different to the old partition. If it is, then
 				// update the partition and set dirty to true again
-				if (!subPartition.isTrivial) {
+				if (!subPartition.isTrivial()) {
 					dirty = true
 					
 					currentPartition.removeSet(stateSet)
-					for (let subSet of subPartition) {
-						currentPartition.addSet(subSet.collectionOfSets)
+					for (let subSet of subPartition.collectionOfSets) {
+						currentPartition.addSet(subSet)
 					}
 				}
 			}
 		}
 		
 		// Now create a new DFA which merges all the states that have been determined to be indistinguishable
-		const getMergedState = {}
+		const getMergedState = new Map()
 		
 		// TODO: make currentPartition an iterator to avoid this clunky reference
 		for (let set of currentPartition.collectionOfSets) {
 			const isStartState = [...set].some(state => state.isStartState)
 			const isAcceptingState = [...set].some(state => state.isAcceptingState)
-			getMergedState[set] = new NFAState("", isStartState, isAcceptingState)
+
+			getMergedState.set(set, new NFAState("", isStartState, isAcceptingState))
 		}
 		
-		const mergedStartState = getMergedState[currentPartition.stateToID[this.startState]]
+		console.log("Partition is", currentPartition)
+		
+		const mergedStartState = singleStateToMerged(this.startState)
 		const minimizedDFA = new NFA(mergedStartState, Object.values(getMergedState), this.alphabet)
 		
+		// TODO: refactor partitions to make this easier
+		function singleStateToMerged (singleState) {
+			return getMergedState.get(currentPartition.stateToID.get(singleState))
+		}
+		
 		for (let state of this.stateSet) {
-			for (let [transitionSymbol, childStates] of state.transitions) {
-				const mergedOrigin = getMergedState[state]
-				const mergedDestination = getMergedState[childStates[0]] // it's a DFA, so only one child state
+			for (let [transitionSymbol, childStates] of Object.entries(state.transitions)) {
+				const mergedOrigin = singleStateToMerged(state)
+				const mergedDestination = singleStateToMerged([...childStates][0]) // it's a DFA, so only one child state
+				console.log("Current map is", currentPartition.stateToID)
+				console.log("Current partition is", currentPartition)
+				console.log("So", currentPartition.stateToID.get([...childStates][0]))
 				
+				if (this.stateSet.has([...childStates][0])) {
+					console.log("ok")
+				} else {
+					console.error("not ok")
+				}
+				
+				console.log("Important thing is", singleStateToMerged([...childStates][0]))
 				minimizedDFA.registerTransition(mergedOrigin, transitionSymbol, mergedDestination)
 			}
 		}
@@ -496,7 +517,7 @@ class Partition {
 	}
 	
 	removeSet (set) {
-		this.collectionOfSets.remove(set)
+		this.collectionOfSets.delete(set)
 		
 		for (let state of set) {
 			this.stateToID.delete(state)
@@ -510,6 +531,14 @@ class Partition {
 		for (let state of set) {
 			this.stateToID.set(state, set) // sets are objects, so are unique, and so can be used as IDs
 		}
+	}
+	
+	canDistinguish (stateA, stateB) {
+		return this.stateToID.get(stateA) !== this.stateToID.get(stateB)
+	}
+	
+	isTrivial () {
+		return this.collectionOfSets.size < 2
 	}
 	
 	static fromPredicate (states, predicate) {
