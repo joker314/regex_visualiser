@@ -31,6 +31,7 @@ regexInputBox.addEventListener("input", () => {
 		// Before drawing the graph, it's good to simplify it a lot by eliminating null transitions
 		currentNFA.eliminateNullTransitions()
 		currentNFA = currentNFA.makeDFA()
+		console.log("STATE SIZE IS", currentNFA.stateSet.size)
 		currentNFA = currentNFA.minimizeDFA()
 		
 		if (currentEngine) {

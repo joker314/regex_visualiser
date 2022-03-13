@@ -503,7 +503,7 @@ class Partition {
 		for (let state of states) {
 			const indication = indicator(state) // compute here once in case indicator is an expensive call
 			
-			if (!indicationToSet.has(state)) {
+			if (!indicationToSet.has(indication)) {
 				indicationToSet.set(indication, new Set())
 			}
 			
