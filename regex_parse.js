@@ -32,6 +32,11 @@ regexInputBox.addEventListener("input", () => {
 		currentNFA.eliminateNullTransitions()
 		currentNFA = currentNFA.makeDFA()
 		currentNFA.minimizeDFA()
+		
+		if (currentEngine) {
+			currentEngine.stopRendering()
+		}
+		
 		currentEngine = new GraphDrawingEngine(nfaPicture, ...currentNFA.createGraph(nfaPicture.height, nfaPicture.width))
 	}
 })

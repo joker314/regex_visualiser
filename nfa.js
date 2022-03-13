@@ -257,7 +257,7 @@ export class NFA {
 				
 				for (let originalState of currentState.originalStates) {
 					for (let otherState of originalState.getNextStates(symbol)) {
-						stateCombinations.push(otherState)
+						 stateCombinations.push(otherState)
 					}
 				}
 				

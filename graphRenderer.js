@@ -41,6 +41,7 @@ export class GraphDrawingEngine {
 		this.transformation = new Transformation(this.canvas.el.width / 2, this.canvas.el.height / 2, 1)
 		this.isRendering = false
 		
+		this.listeners = []
 		this.registerEventListeners()
 		
 		const d3GraphEdges = this.graphEdges.flatMap(edge => edge.links)
@@ -81,6 +82,14 @@ export class GraphDrawingEngine {
 		window.requestAnimationFrame(this.render.bind(this))
 	}
 	
+	stopRendering () {
+		this.isRendering = false
+		
+		for (let [eventName, listener] of this.listeners) {
+			this.canvas.el.removeEventListener(eventName, listener)
+		}
+	}
+	
 	registerEventListeners () {
 		const EVENTS = {
 			"mousedown": event => {
@@ -103,7 +112,10 @@ export class GraphDrawingEngine {
 		}
 		
 		for (let [eventName, cb] of Object.entries(EVENTS)) {
-			this.canvas.el.addEventListener(eventName, cb.bind(this))
+			const listener = cb.bind(this)
+			
+			this.canvas.el.addEventListener(eventName, listener)
+			this.listeners.push([eventName, listener])
 		}
 	}
 	
