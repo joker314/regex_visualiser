@@ -78,6 +78,7 @@ export class GraphDrawingEngine {
 
 
 	startRendering () {
+		console.log("RENDERING")
 		this.isRendering = true
 		window.requestAnimationFrame(this.render.bind(this))
 	}
@@ -153,11 +154,12 @@ export class GraphDrawingEngine {
  * Represents a node
  */
 export class GraphNode {
-	constructor (x, y, isAccepting, isStarting, label = "") {
+	constructor (x, y, isAccepting, isStarting, isActive, label = "") {
 		this.x = x
 		this.y = y
 		this.isAccepting = isAccepting
 		this.isStarting = isStarting
+		this.isActive = isActive
 		this.label = label
 		// TODO: this.label unused
 	}
@@ -167,6 +169,7 @@ export class GraphNode {
 	}
 
 	render (engine, timestamp) {
+		console.log("node being drawn")
 		//console.log(engine)
 		const position = engine.transformation.scalePoint(this.getPoint())
 		
@@ -190,6 +193,11 @@ export class GraphNode {
 			
 			engine.canvas.drawLine(topLeft, bottomRight, "orange")
 			engine.canvas.arrowAt(bottomRight, engine.transformation.scalePoint(this.getPoint()), "orange")
+		}
+		
+		// Draw a pink circle in the middle if this node is currently active
+		if (this.isActive) {
+			engine.canvas.drawCircle(position, 10, "pink", true)
 		}
 	}
 }

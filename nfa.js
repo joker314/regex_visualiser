@@ -58,6 +58,10 @@ export class NFA {
         this.startState = startState
         this.stateSet = new Set(stateSet)
         this.alphabet = new Set(alphabet)
+		this.visitHistory = new Map()
+		this.pumpingInterval = null
+		this.symbolNumber = 0; // position into the input stream
+		
         this.reset() // go to the start state
         
         if (!this.startState.isStartState) {
@@ -115,7 +119,8 @@ export class NFA {
 		// Cast to and from set in order to allow for .flatMap, which is only defined for arrays
 		// TODO: break up line - it's too long
         this.currentStates = new Set(Array.from(this.currentStates).flatMap(currentState => Array.from(currentState.getNextStates(inputSymbol))))
-        this.handleNullTransitions()
+		this.handleNullTransitions()
+		this.redrawCurrentStates()
     }
     
     handleNullTransitions () {
@@ -350,7 +355,7 @@ export class NFA {
 		console.log("Partition is", currentPartition)
 		
 		const mergedStartState = singleStateToMerged(this.startState)
-		const minimizedDFA = new NFA(mergedStartState, Object.values(getMergedState), this.alphabet)
+		const minimizedDFA = new NFA(mergedStartState, getMergedState.values(), this.alphabet)
 		
 		// TODO: refactor partitions to make this easier
 		function singleStateToMerged (singleState) {
@@ -384,9 +389,30 @@ export class NFA {
     finish () {
         return Array.from(this.currentStates).some(currentState => currentState.isAcceptingState)
     }
+	
+	// TODO: rename to reflect wider use case
+	redrawCurrentStates () {
+		if (this.startState.graphNode) { // TODO: this should be a property of the NFA not of the start state
+			for (let state of this.stateSet) {
+				state.graphNode.isActive = this.currentStates.has(state)
+			}
+		}
+		
+		for (let state of this.currentStates) {
+			if (this.visitHistory.has(state)) {
+				this.pumpingInterval = [this.visitHistory.get(state), this.symbolNumber]
+			} else {
+				this.visitHistory.set(state, this.symbolNumber)
+			}
+		}
+		
+		this.symbolNumber++;
+	}
     
     reset () {
         this.currentStates = new Set([this.startState])
+		this.redrawCurrentStates()
+		this.visitHistory.clear()
 		
 		// TODO: only run this when needed
 		this.handleNullTransitions()
@@ -441,7 +467,7 @@ export class NFA {
 				const xCoord = xInterval * (1 + horizontalIndex)
 				const yCoord = yInterval * (1 + verticalIndex)
 				// TODO: textual label
-				node.graphNode = new GraphNode(xCoord, yCoord, node.isAcceptingState, node.isStartState)
+				node.graphNode = new GraphNode(xCoord, yCoord, node.isAcceptingState, node.isStartState, this.currentStates.has(node))
 
 				nodeObjects.push(node.graphNode)
 			}

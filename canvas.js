@@ -19,10 +19,15 @@ export class Canvas {
 		this.ctx.stroke()
 	}
 	
-	drawCircle (point, radius, strokeCol) {
+	drawCircle (point, radius, strokeCol, fill = false) {
 		this.ctx.beginPath()
-		this.ctx.strokeStyle = strokeCol
+		this.ctx.strokeStyle = this.ctx.fillStyle = strokeCol
 		this.ctx.arc(point.x, point.y, radius, 0, 2 * Math.PI)
+		
+		if (fill) {
+			this.ctx.fill()
+		}
+		
 		this.ctx.stroke()
 	}
 	

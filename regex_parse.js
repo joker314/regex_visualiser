@@ -1,4 +1,5 @@
 const regexInputBox = document.getElementById("inputted_regex")
+const testWordInputBox = document.getElementById("test_word")
 const regexOutput = document.getElementById("highlighted_regex")
 const regexHumanReadable = document.getElementById("human_readable")
 const nfaPicture = document.getElementById("nfa-picture")
@@ -32,15 +33,36 @@ regexInputBox.addEventListener("input", () => {
 		// XXX: splitting it out like this was very helpful as it let me quickly see which section was causing mistakes
 		currentNFA.eliminateNullTransitions()
 		currentNFA = currentNFA.makeDFA()
-		console.log("STATE SIZE IS", currentNFA.stateSet.size)
 		currentNFA = currentNFA.minimizeDFA()
 		
 		if (currentEngine) {
 			currentEngine.stopRendering()
 		}
-		
+			
+		processWord()
 		currentEngine = new GraphDrawingEngine(nfaPicture, ...currentNFA.createGraph(nfaPicture.height, nfaPicture.width))
 	}
+})
+
+function processWord () {
+	if (!currentNFA) {
+		return
+	}
+	
+	const word = testWordInputBox.value
+	currentNFA.reset()
+
+	for (let symbol of word) {
+		currentNFA.readSymbol(symbol)
+	}
+	
+	if (currentEngine) {
+		currentEngine.startRendering()
+	}
+}
+
+testWordInputBox.addEventListener("input", () => {
+	processWord()
 })
 
 class ASTNode {
