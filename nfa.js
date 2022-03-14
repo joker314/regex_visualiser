@@ -386,7 +386,7 @@ export class NFA {
 	
     // Determines whether or not the NFA is in an accepting state. Usually called once all
 	// the input has been consumed -- but doesn't have to be.
-    finish () {
+    finished () {
         return Array.from(this.currentStates).some(currentState => currentState.isAcceptingState)
     }
 	
@@ -398,11 +398,13 @@ export class NFA {
 			}
 		}
 		
-		for (let state of this.currentStates) {
-			if (this.visitHistory.has(state)) {
-				this.pumpingInterval = [this.visitHistory.get(state), this.symbolNumber]
-			} else {
-				this.visitHistory.set(state, this.symbolNumber)
+		if (!this.pumpingInterval) {
+			for (let state of this.currentStates) {
+				if (this.visitHistory.has(state)) {
+					this.pumpingInterval = [this.visitHistory.get(state), this.symbolNumber]
+				} else {
+					this.visitHistory.set(state, this.symbolNumber)
+				}
 			}
 		}
 		
@@ -413,6 +415,7 @@ export class NFA {
         this.currentStates = new Set([this.startState])
 		this.redrawCurrentStates()
 		this.visitHistory.clear()
+		this.symbolNumber = 0
 		
 		// TODO: only run this when needed
 		this.handleNullTransitions()

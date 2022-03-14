@@ -1,5 +1,9 @@
 const regexInputBox = document.getElementById("inputted_regex")
 const testWordInputBox = document.getElementById("test_word")
+const pumpingHintOutput = document.getElementById("pumping_hint")
+const pumpingLemmaOutput = document.getElementById("pumping_out")
+const doesMatchOutput = document.getElementById("does_match")
+const repeatBox = document.getElementById("repeat_box")
 const regexOutput = document.getElementById("highlighted_regex")
 const regexHumanReadable = document.getElementById("human_readable")
 const nfaPicture = document.getElementById("nfa-picture")
@@ -10,6 +14,8 @@ import {GraphDrawingEngine} from "./graphRenderer.js"
 let currentAST = null
 let currentNFA = null
 let currentEngine = null
+
+let pumpElement = null
 
 regexInputBox.addEventListener("input", () => {
 	let astRoot = null
@@ -44,6 +50,14 @@ regexInputBox.addEventListener("input", () => {
 	}
 })
 
+repeatBox.addEventListener("input", e => {
+	if (!pumpElement) {
+		return
+	}
+	
+	pumpElement.textContent = pumpElement.dataset.originalPump.repeat(repeatBox.value)
+})
+
 function processWord () {
 	if (!currentNFA) {
 		return
@@ -58,6 +72,52 @@ function processWord () {
 	
 	if (currentEngine) {
 		currentEngine.startRendering()
+	}
+	
+	// Check if the word matches
+	doesMatchOutput.textContent = currentNFA.finished() ? "(matches)" : "(doesn't match)"
+	
+	// Check if we can apply the pumping lemma
+	if (currentNFA.finished()) {
+		if (currentNFA.pumpingInterval) {
+			const [pumpStart, pumpEnd] = currentNFA.pumpingInterval
+			
+			const prefix = word.substring(0, pumpStart + 1)
+			const pump = word.substring(pumpStart + 1, pumpEnd + 1)
+			const suffix = word.substring(pumpEnd + 1)
+			
+			const pumpCandidates = []
+			
+			for (let pumpSize = 0; pumpSize < 5; pumpSize++) {
+				pumpCandidates.push(prefix + pump.repeat(pumpSize) + suffix)
+			}
+			
+			const prefixElement = document.createElement("SPAN")
+			pumpElement = document.createElement("SPAN")
+			const suffixElement = document.createElement("SPAN")
+			
+
+			prefixElement.textContent = prefix
+			pumpElement.textContent = pump
+			pumpElement.dataset.originalPump = pump
+			suffixElement.textContent = suffix
+
+			// TODO: move to CSS
+			pumpElement.style.textDecoration = "underline"
+			pumpElement.style.paddingLeft = pumpElement.style.paddingRight = "1px"
+			
+			pumpingLemmaOutput.replaceChildren(
+				prefixElement,
+				pumpElement,
+				suffixElement
+			)
+			
+			pumpingHintOutput.textContent = "Can pump! Check below"
+		} else {
+			pumpingHintOutput.textContent = "Shorter than the pumping length, type up to " + currentNFA.stateSet.size + " more characters"
+		}
+	} else {
+		pumpingHintOutput.textContent = "Doesn't match the regular expression"
 	}
 }
 
