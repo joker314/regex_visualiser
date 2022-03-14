@@ -4,6 +4,7 @@ const pumpingHintOutput = document.getElementById("pumping_hint")
 const pumpingLemmaOutput = document.getElementById("pumping_out")
 const doesMatchOutput = document.getElementById("does_match")
 const repeatBox = document.getElementById("repeat_box")
+const trapStateBox = document.getElementById("add_trap_state")
 const regexOutput = document.getElementById("highlighted_regex")
 const regexHumanReadable = document.getElementById("human_readable")
 const nfaPicture = document.getElementById("nfa-picture")
@@ -17,7 +18,7 @@ let currentEngine = null
 
 let pumpElement = null
 
-regexInputBox.addEventListener("input", () => {
+function handleInput () {
 	let astRoot = null
 
 	try {
@@ -41,6 +42,10 @@ regexInputBox.addEventListener("input", () => {
 		currentNFA = currentNFA.makeDFA()
 		currentNFA = currentNFA.minimizeDFA()
 		
+		if (trapStateBox.checked) {
+			currentNFA.addTrapState()
+		}
+		
 		if (currentEngine) {
 			currentEngine.stopRendering()
 		}
@@ -48,7 +53,10 @@ regexInputBox.addEventListener("input", () => {
 		processWord()
 		currentEngine = new GraphDrawingEngine(nfaPicture, ...currentNFA.createGraph(nfaPicture.height, nfaPicture.width))
 	}
-})
+}
+
+regexInputBox.addEventListener("input", handleInput)
+trapStateBox.addEventListener("input", handleInput)
 
 repeatBox.addEventListener("input", e => {
 	if (!pumpElement) {
@@ -114,7 +122,8 @@ function processWord () {
 			
 			pumpingHintOutput.textContent = "Can pump! Check below"
 		} else {
-			pumpingHintOutput.textContent = "Shorter than the pumping length, type up to " + currentNFA.stateSet.size + " more characters"
+			const defficiency = currentNFA.stateSet.size - word.length
+			pumpingHintOutput.textContent = "Shorter than the pumping length, type up to " + defficiency + " more characters"
 		}
 	} else {
 		pumpingHintOutput.textContent = "Doesn't match the regular expression"

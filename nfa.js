@@ -113,7 +113,7 @@ export class NFA {
     
     readSymbol (inputSymbol) {
         if (!this.alphabet.has(inputSymbol)) {
-            throw new Error("Symbol", inputSymbol, "not in alphabet")
+            return false
         }
         
 		// Cast to and from set in order to allow for .flatMap, which is only defined for arrays
@@ -420,6 +420,23 @@ export class NFA {
 		// TODO: only run this when needed
 		this.handleNullTransitions()
     }
+	
+	addTrapState () {
+		const trapState = new NFAState("trap state", false, false, {}, {}, 0, true)
+		this.stateSet.add(trapState)
+		
+		
+		// Add a transition from every other state to the trap state
+		// This includes a transition from the trap state to itself
+		for (let otherState of this.stateSet) {
+			for (let transitionSymbol of this.alphabet) {
+				// Make sure the state doesn't have a valid transition along that symbol
+				if (!otherState.getNextStates(transitionSymbol).size) {
+					this.registerTransition(otherState, transitionSymbol, trapState)
+				}
+			}
+		}
+	}
 
     createGraph (height, width) {
 		// We use BFS for finding the coordinates of where to place the nodes
@@ -470,7 +487,15 @@ export class NFA {
 				const xCoord = xInterval * (1 + horizontalIndex)
 				const yCoord = yInterval * (1 + verticalIndex)
 				// TODO: textual label
-				node.graphNode = new GraphNode(xCoord, yCoord, node.isAcceptingState, node.isStartState, this.currentStates.has(node))
+				node.graphNode = new GraphNode(
+					xCoord,
+					yCoord,
+					node.isAcceptingState,
+					node.isStartState,
+					this.currentStates.has(node),
+					node.isTrapState,
+					node.isTrapState ? "brown" : "orange"
+				)
 
 				nodeObjects.push(node.graphNode)
 			}
@@ -496,10 +521,12 @@ export class NFA {
 export class NFAState {
 	static idNum = 0
 	
-    constructor (humanName, isStartState, isAcceptingState, transitions = {}, inverseTransitions = {}, indegree = 0) {
+	// TODO: reorder so that isTrapState is earlier?
+    constructor (humanName, isStartState, isAcceptingState, transitions = {}, inverseTransitions = {}, indegree = 0, isTrapState = false) {
         this.humanName = humanName
         this.isStartState = isStartState
         this.isAcceptingState = isAcceptingState
+		this.isTrapState = isTrapState
         this.transitions = transitions
 		this.inverseTransitions = inverseTransitions
 		this.indegree = indegree

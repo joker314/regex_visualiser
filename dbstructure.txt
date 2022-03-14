@@ -1,0 +1,8 @@
+Database structure:
+	USERS
+		user_id
+		username
+		firstname
+		surname
+		
+		

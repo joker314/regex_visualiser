@@ -31,11 +31,11 @@ export class Canvas {
 		this.ctx.stroke()
 	}
 	
-	drawBezier (bezierParameters) {
+	drawBezier (color, bezierParameters) {
 		const [startPoint, ...controlAndEndPoints] = bezierParameters 
 		
 		this.ctx.beginPath()
-		this.ctx.strokeStyle = "red"
+		this.ctx.strokeStyle = color
 		this.ctx.moveTo(startPoint.x, startPoint.y)
 
 		//console.log("params", bezierParameters)

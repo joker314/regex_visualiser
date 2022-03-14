@@ -50,7 +50,7 @@ export class GraphDrawingEngine {
 		this.simulation = forceSimulation(this.graphNodes.concat(intermediateNodes))
 			.force("link", forceLink(d3GraphEdges).distance(edge => {
 				if (edge.source.isSelf || edge.target.isSelf) {
-					return 180
+					return 100
 				} else {
 					return 90
 				}
@@ -154,13 +154,15 @@ export class GraphDrawingEngine {
  * Represents a node
  */
 export class GraphNode {
-	constructor (x, y, isAccepting, isStarting, isActive, label = "") {
+	constructor (x, y, isAccepting, isStarting, isActive, isTrapState, color = "orange", label = "") {
 		this.x = x
 		this.y = y
 		this.isAccepting = isAccepting
 		this.isStarting = isStarting
 		this.isActive = isActive
+		this.isTrapState = isTrapState
 		this.label = label
+		this.color = color
 		// TODO: this.label unused
 	}
 	
@@ -173,11 +175,11 @@ export class GraphNode {
 		//console.log(engine)
 		const position = engine.transformation.scalePoint(this.getPoint())
 		
-		engine.canvas.drawCircle(position, 30, "orange")
+		engine.canvas.drawCircle(position, 30, this.color)
 		
 		// Add a double border if it's an accepting state
 		if (this.isAccepting) {
-			engine.canvas.drawCircle(position, 25, "orange")
+			engine.canvas.drawCircle(position, 25, this.color)
 		}
 		
 		// Add an inward orange arrow if it's the starting state
@@ -191,8 +193,8 @@ export class GraphNode {
 				new Vector(0, 20).rotate(3 * Math.PI / 4)
 			).fromOrigin())
 			
-			engine.canvas.drawLine(topLeft, bottomRight, "orange")
-			engine.canvas.arrowAt(bottomRight, engine.transformation.scalePoint(this.getPoint()), "orange")
+			engine.canvas.drawLine(topLeft, bottomRight, this.color)
+			engine.canvas.arrowAt(bottomRight, engine.transformation.scalePoint(this.getPoint()), this.color)
 		}
 		
 		// Draw a pink circle in the middle if this node is currently active
@@ -206,6 +208,7 @@ export class GraphEdge {
 	constructor (startNode, endNode, label = "") {
 		this.startNode = startNode
 		this.endNode = endNode
+		this.label = label
 		this.label = label
 		
 		if (this.startNode === this.endNode) {
@@ -245,7 +248,7 @@ export class GraphEdge {
 			const nearPoint = this.startNode.getPoint().positionVector()
 			const farPoint = intermediatePoint.positionVector()
 			
-			const diagonalVector = farPoint.minus(nearPoint)
+			const diagonalVector = farPoint.minus(nearPoint).scale(2)
 			//console.log("Diagonal vector is", diagonalVector.length())
 			//console.log("vs", diagonalVector.rotate(0).length())
 			
@@ -273,7 +276,10 @@ export class GraphEdge {
 		}
 		
 		bezierParameters = bezierParameters.map(point => engine.transformation.scalePoint(point))		
-		engine.canvas.drawBezier(bezierParameters)
+		engine.canvas.drawBezier(
+			this.endNode.isTrapState ? "gray" : "red",
+			bezierParameters
+		)
 
 		engine.canvas.arrowAt(bezier(bezierParameters, 0.2), engine.transformation.scalePoint(this.endNode.getPoint()))
 		engine.canvas.drawText(
