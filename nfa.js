@@ -114,7 +114,9 @@ export class NFA {
             if (this.shouldErrorOnForeignSymbol) {
 				throw new Error("NFA read a symbol of " + inputSymbol + " which isn't even in the alphabet")
 			} else {
-				return false
+				// Since there cannot possibly be outgoing transitions for symbols outside the alphabet,
+				// we can just 
+				return
 			}
         }
         
