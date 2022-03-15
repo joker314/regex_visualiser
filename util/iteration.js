@@ -36,13 +36,3 @@ export function enumerate (arr) {
 		[Symbol.iterator]: function () { return this }
 	}
 }
-
-// Computes the Cartesian product of two sets
-export function* product (A, B) {
-	for (let aItem of A) {
-		for (let bItem of B) {
-			yield [aItem, bItem]
-		}
-	}
-	return
-}
