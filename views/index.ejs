@@ -9,7 +9,7 @@
 		<canvas id="nfa-picture" width="1000px" height="500px">
 			Non-deterministic finite state automaton interactive picture
 		</canvas>
-		<p><input type="checkbox" id="add_trap_state"> Add trap state?</p>
+		<p><label><input type="checkbox" id="add_trap_state"> Add trap state?</label</p>
 		<code id="highlighted_regex"></code>
 		<p>/<input id="inputted_regex">/</p>
 		<p>Test word: <input id="test_word"> <span id="does_match"></span> Pumping lemma hint: <span id="pumping_hint"></span></p>
@@ -18,10 +18,10 @@
 			
 		</div>
 		
-		<script type="module" src="./nfa.js"></script>
-		<script type="module" src="./regex_parse.js"></script>
-		<script type="module" src="./util.js"></script>
-		<script type="module" src="./canvas.js"></script>
-		<script type="module" src="./graphRenderer.js"></script>
+		<script type="module" src="./static/nfa.js"></script>
+		<script type="module" src="./static/regex_parse.js"></script>
+		<script type="module" src="./static/util.js"></script>
+		<script type="module" src="./static/canvas.js"></script>
+		<script type="module" src="./static/graphRenderer.js"></script>
 	</body>
 </html>
