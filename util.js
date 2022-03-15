@@ -48,16 +48,6 @@ export function invertMap (obj) {
 	}
 }
 
-// Computes the Cartesian product of two sets
-export function* product (A, B) {
-	for (let aItem of A) {
-		for (let bItem of B) {
-			yield [aItem, bItem]
-		}
-	}
-	return
-}
-
 // TODO: consider implementing by subclassing Set?
 export function setsEqual(setA, setB) {
 	// Check that set A and B have the same size
