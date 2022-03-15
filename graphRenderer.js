@@ -78,7 +78,6 @@ export class GraphDrawingEngine {
 
 
 	startRendering () {
-		console.log("RENDERING")
 		this.isRendering = true
 		window.requestAnimationFrame(this.render.bind(this))
 	}

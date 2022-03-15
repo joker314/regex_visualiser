@@ -8,54 +8,87 @@ import {enumerate} from './util/iteration.js'
  * of finite directed graph which represents the computational
  * process of deciding a regular language.
  */
-
-// Although one can think of an NFA as the start state in the NFA, it
-// is convenient to have a wrapper which can keep track of overall state
-// in one place.
-//
-// It also makes sure every DFA is valid by asserting that there is always
-// at least one start state
 export class NFA {
-    constructor (startState, stateSet, alphabet, isDFA = false) {
+    constructor (startState, stateSet, alphabet, shouldErrorOnForeignSymbol = false) {
         this.startState = startState
         this.stateSet = new Set(stateSet)
         this.alphabet = new Set(alphabet)
 		this.visitHistory = new Map()
-		this.pumpingInterval = null
-		this.symbolNumber = 0; // position into the input stream
+		this.shouldErrorOnForeignSymbol = shouldErrorOnForeignSymbol
 		
-        this.reset() // go to the start state
+		// The pumping interval is an array of two numbers, (A, B). This
+		// indicates that it is possible to apply the pumping lemma to the substring
+		// between input position A and input position B in the input stream.
+		// The pumping interval is null when the pumping lemma doesn't apply.
+		this.pumpingInterval = null
+		
+		// Go to the start state, record the position into the input stream as 0,
+		// and other initialisation is done in the .reset() method. This is because it might
+		// need to be called again later, after some processing has already been done on the NFA instance.
+        this.reset()
         
+		// Part of the point of having this wrapper class for NFAs is to make sure the state of the NFA is consistent
+		// by ensuring the selected start state actually claims to be a start state.
         if (!this.startState.isStartState) {
             throw new Error("Start state is not marked as a start state in NFA")
         }
     }
     
+	/**
+	 * Each NFAState is responsible for maintaining its inward and outward connections. However,
+	 * the purpose of this method in the wrapping NFA is to make it a single method call in order to
+	 * create a new transition. This involves many small tasks, such as:
+	 *  - registering an incoming transition with the destination state
+	 *  - registering an outgoing transition with the source state
+	 *  - increasing the indegree and outdegree counters, where necessary
+	 *  - initialising transition tables for states if they don't already have them
+	 * in general, it requires notifying both of the states of the intended change.
+	 */
     registerTransition (fromState, inputSymbol, toState) {
-        fromState.transitions[inputSymbol] ||= new Set() // if not yet defined, create it
-		toState.inverseTransitions[inputSymbol] ||= new Set()
+		// Create a set of outgoing and incoming transitions for a state if it's not yet defined.
+		// The ??= is a very readable and common pattern for only creating it if it doesn't already exist
+        fromState.transitions[inputSymbol] ??= new Set() // if not yet defined, create it
+		toState.inverseTransitions[inputSymbol] ??= new Set()
 		
+		// If the incoming connection to the destination state hasn't already been registered, then register it
+		// and increase the destination's indegree
 		if (!fromState.transitions[inputSymbol].has(toState)) {
 			toState.indegree++
 			fromState.transitions[inputSymbol].add(toState)
 		}
 		
+		// Similarly for the outward connection from the source state
 		if (!toState.inverseTransitions[inputSymbol].has(fromState)) {
 			toState.inverseTransitions[inputSymbol].add(fromState)
 		}
     }
     
+	/**
+	 * See registerTransition for the sorts of tasks that need to be done when removing a transition between
+	 * two states. It requires notifying both states of the intended change.
+	 */
     unregisterTransition (fromState, inputSymbol, toState) {
+		// Check to see that
+		//  i) there is at least one outward connection from the source state
+		//     so that we don't attempt to access a non-existent data structure,
+		//     which would lead to an error
 		if (fromState.transitions.hasOwnProperty(inputSymbol)) {
+			// and ii) one of those outward connections is to the destination state,
+			//         such that the transition we are trying to remove actually exists
 			if (fromState.transitions[inputSymbol].has(toState)) {
+				// Mark that the destination state has less incoming connections now
 				toState.indegree--
+				
+				// Tell the states on both ends that the connection should no longer exist
 				fromState.transitions[inputSymbol].delete(toState)
 				toState.inverseTransitions[inputSymbol].delete(fromState)
-				//debugger;
 			}
 			
 			// If this causes there to be no more transitions across this symbol
 			// from that state, then remove the entry in the state's transition table
+			
+			// This involves deleting the Set so that it can be garbage collected, thus saving on the underlying
+			// memory used by the Set data structure internally by JavaScript
 			if (fromState.transitions[inputSymbol].size === 0) {
 				delete fromState.transitions[inputSymbol]
 			}
@@ -74,14 +107,35 @@ export class NFA {
     }
     
     readSymbol (inputSymbol) {
+		// If the input symbol isn't even in the alphabet (i.e. the character was never
+		// used in the regular expression), then it is sometimes helpful to throw an error.
+		// We leave this as something configurable for the user.
         if (!this.alphabet.has(inputSymbol)) {
-            return false
+            if (this.shouldErrorOnForeignSymbol) {
+				throw new Error("NFA read a symbol of " + inputSymbol + " which isn't even in the alphabet")
+			} else {
+				return false
+			}
         }
         
 		// Cast to and from set in order to allow for .flatMap, which is only defined for arrays
 		// TODO: break up line - it's too long
-        this.currentStates = new Set(Array.from(this.currentStates).flatMap(currentState => Array.from(currentState.getNextStates(inputSymbol))))
+        this.currentStates = new Set(
+			// The below process converts each item into an array. flatMap additionally merges
+			// each of these arrays into a single, one-dimensional (i.e. "flat") array, which allows
+			// for easier further processing
+			[...this.currentStates].flatMap(
+				// Replace each state with an array of next states
+				currentState => [...currentState.getNextStates(inputSymbol)]
+			)
+		)
+		
+		// Although the end application does not use null transitions, this library might be used by other
+		// applications in the future which do try to simulate the progression of epsilon-NFAs.
+		// TODO: actually add a dropdown for all the options?
 		this.handleNullTransitions()
+		
+		// Now that we've read a symbol, 
 		this.redrawCurrentStates()
     }
     
@@ -284,7 +338,6 @@ export class NFA {
 						}
 					}
 					
-					console.log("Code for state", state, "is", code)
 					return code
 				})
 				
