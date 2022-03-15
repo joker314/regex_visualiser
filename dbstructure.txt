@@ -2,24 +2,7 @@ Database structure:
 	USERS
 		user_id
 		username
-		password hash
 		firstname
 		surname
-	
-	CLASSES
-		class_id
-		teacher owner_id
-		class name
-	
-	CLASSROOM MEMBERSHIPS
-		user_id
-		class_id
-	
-	SUBMISSIONS
-		submission_id
-		author_id
-		class_id
-		public?
-		regex
 		
-	
+		
