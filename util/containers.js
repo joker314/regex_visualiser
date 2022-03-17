@@ -91,17 +91,6 @@ class DoublyLinkedList {
 		
 		return this
 	}
-	
-	/**
-	 * Inserts `newNode` just before the position of this node in the linked list
-	 * Note that `newNode` should not be in any other linked list, because this method
-	 * changes its next/prev pointers
-	 */
-	insertBefore (newNode) {
-		this.prev?.next = newNode // fix this.prev's references
-		newNode.next = this.next // fix newNode's references
-		this.next?.prev = newNode // fix this.next's references
-	}
 }
 
 // XXX: composition over inheritence :)
@@ -134,6 +123,35 @@ class Queue {
 	 * (Error detection is done by the underlying LinkedList instance)
 	 */
 	dequeue () {
-		this.underlyingList.end
+		// .end gets you the sentinal "empty list", so we apply .prev
+		// to get the last node that actually has a value associated with it.
+		const lastNode = this.underlyingList.end.prev
+		
+		return lastNode.unlink().value
+	}
+}
+
+/**
+ * A stack is implemented as a linked list, and supports:
+ *  - pushing onto the stack
+ *  - popping off the stack
+ *
+ * The stack is a last in, first out data structure
+ */
+class Stack {
+	// Constructs an empty stack, that can be added to with .push()
+	constructor () {
+		this.underlyingList = new LinkedList()
+	}
+	
+	push (value) {
+		// Add the value at the beginning of the linked list
+		this.underlyingList = new LinkedList(value, this.underlyingList)
+	}
+	
+	pop () {
+		const oldHead = this.underlyingList.head()
+		
+		return oldHead.unlink().value
 	}
 }
