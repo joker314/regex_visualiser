@@ -106,31 +106,43 @@ export class NFA {
 		this.cleanupState(toState)
     }
     
+	/**
+	 * The NFA is responsible for keeping track of the states it is currently in. (For a DFA, it is always
+	 * in 1 state - or somtimes 0 if there is no trap state).
+	 *
+	 * This function will take in ONE input symbol and update its state accordingly.
+	 *
+	 * This means that in order to read in an entire input, one must call this method for each symbol of the input
+	 * in turn.
+	 */
     readSymbol (inputSymbol) {
-		// If the input symbol isn't even in the alphabet (i.e. the character was never
-		// used in the regular expression), then it is sometimes helpful to throw an error.
-		// We leave this as something configurable for the user.
         if (!this.alphabet.has(inputSymbol)) {
+			// If the input symbol isn't even in the alphabet (i.e. the character was never
+			// used in the regular expression), then it is sometimes helpful to throw an error.
+			// We leave this as something configurable for the user.
             if (this.shouldErrorOnForeignSymbol) {
 				throw new Error("NFA read a symbol of " + inputSymbol + " which isn't even in the alphabet")
 			} else {
 				// Since there cannot possibly be outgoing transitions for symbols outside the alphabet,
-				// we can just 
-				return
+				// we know that we can just set the NFA's state to the empty set
+				this.currentStates = new Set()
 			}
-        }
-        
-		// Cast to and from set in order to allow for .flatMap, which is only defined for arrays
-		// TODO: break up line - it's too long
-        this.currentStates = new Set(
-			// The below process converts each item into an array. flatMap additionally merges
-			// each of these arrays into a single, one-dimensional (i.e. "flat") array, which allows
-			// for easier further processing
-			[...this.currentStates].flatMap(
-				// Replace each state with an array of next states
-				currentState => [...currentState.getNextStates(inputSymbol)]
+        } else {
+			// Otherwise, we should calculate the next set of states.
+			// In a DFA, this will be a set of size 1.
+			
+			// Use [...x] to convert to an array. This is because sets don't have flatMap capabilities
+			// At the end, convert back to a set
+			this.currentStates = new Set(
+				// The below process converts each item into an array. flatMap additionally merges
+				// each of these arrays into a single, one-dimensional (i.e. "flat") array, which allows
+				// for easier further processing
+				[...this.currentStates].flatMap(
+					// Replace each state with an array of next states
+					currentState => [...currentState.getNextStates(inputSymbol)]
+				)
 			)
-		)
+		}
 		
 		// Although the end application does not use null transitions, this library might be used by other
 		// applications in the future which do try to simulate the progression of epsilon-NFAs.
@@ -141,24 +153,57 @@ export class NFA {
 		this.redrawCurrentStates()
     }
     
+	/**
+	 * In an epsilon-NFA, it is possible for there to be a transition between two states that is labelled
+	 * with the empty symbol (epsilon). This means that it is possible to move from one state to the other without having
+	 * read any particular symbol.
+	 *
+	 * Thus, if after some operation the NFA finds itself in state A, and state A has an outward transition to state B along
+	 * epsilon, then the NFA must also enter state B at the same time.
+	 *
+	 * This method should be called whenever the state the NFA is in changes, and it is responsible for finding the destinations
+	 * of these epsilon transitions, and entering them.
+	 */
     handleNullTransitions () {
+		// TODO: use an actual stack
+		// This keeps track of the states that we need to check
+		// They might have outward epsilon transitions
         const stateQueue = [...this.currentStates]
         
+		// Keep taking a state from the stateQueue...
 		let thisState;
         while (thisState = stateQueue.pop()) {
+			// ...and checking all the states reachable from it along a single epsilon transition...
             thisState.getNextStates("").forEach(nextState => {
                 if (!this.currentStates.has(nextState)) {
+					// Enter the destination state
                     this.currentStates.add(nextState)
+					
+					// There is a possibility of a chain reaction, for example if
+					// we start in state A and the transitions are:
+					//   A -> B -> C
+					// then once we enter state B, we suddenly have another epsilon transition
+					// and so we add this to the queue to be processed later, so that we can move
+					// into state C at a later iteration.
                     stateQueue.push(nextState)
                 }
             })
         }
     }
 	
+	/**
+	 * Safely disposes of a state that is unreachable.
+	 * An unreachable state is one that cannot be reached from the start state after reading
+	 * a finite number of symbols.
+	 *
+	 * In the case of a longer chain like u -> v -> w, where u is unreachable, it is true that each
+	 * of u, v, and w are all unreachable. However, this method must be called with the earliest such state,
+	 * which is u. This method will then recursively clean up both v and w.
+	 */
 	cleanupState (stateToDelete) {
-		// There is no evidence yet that the passed state is unreachable. It might be part of a longer
-		// chain like w in u --> v --> w. But in this case, cleanupState(u) should be called first, and
-		// this will recursively induce each of v and w to be cleaned up eventually.
+		// A state is unreachable if it has no incoming connections from other states
+		// However, the start state is a special case because no matter what the start state is reachable,
+		// because it's the state we are automatically in it at the start (and have therefore immediately reached it)
 		if (stateToDelete.indegree !== 0 || stateToDelete.isStartState) {
 			return
 		}
@@ -175,10 +220,13 @@ export class NFA {
 		// from the NFA object, so it will be garabage collected soon (as long as the programmer has not created
 		// a reference to it somewhere else)
 		this.stateSet.delete(stateToDelete)
-		console.log("A state was removed, so there are now", this.stateSet.size)
 	}
 	
 	// TODO: use this method more in regex_parse.js
+	// TODO: defensive programming, are these in the state set?
+	/**
+	 * Safely changes the start state of this NFA from one state to another.
+	 */
 	transferStartState (formerStartState, newStartState) {
 		if (!formerStartState.isStartState) {
 			throw new Error("Tried to transfer the start state away from a state which is not actually the current start state")
@@ -200,10 +248,8 @@ export class NFA {
 	 * the transitions across.
 	 */
 	mergeStates (otherState, targetState) {
-		console.log("Request to merge", otherState, "into", targetState)
 		// Validate to make sure we're not trying to merge a state into itself
 		if (otherState === targetState) {
-			console.log("Tried to merge state into itself")
 			return
 		}
 		
@@ -214,11 +260,19 @@ export class NFA {
 		
 		for (let [transitionSymbol, otherChildren] of Object.entries(otherState.transitions)) {
 			for (let otherChild of otherChildren) {
-				// Create a connection directly between targetState and otherChild, bypassing otherState
-				// but first, we want to carefully handle the case were this transition is a self-transition
-				// from otherState to itself. In that case, since we're assuming targetState and otherState are equivalent
-				// we can replace otherChild with targetState. This is important because otherwise it's possible that even after the
-				// merge there would still be a transition from targetState to otherState that would be dangerous to remove.
+				// At the moment, the connection looks like this:
+				//   otherState -(a)-> otherChild
+				// We want to create a similar transition, but from targetState. This is because
+				// by merging otherState into targetState, we are copying over all of its transitions to other states.
+				// So we want:
+				//   targetState -(a)-> otherChild
+				// However, there is a subtle point which is where otherChild === otherState. In other words, the originalState
+				// transition looked like this, a self-loop:
+				//   otherState -(a)-> otherState
+				// but we don't want the transition from targetState to map to otherState, because we're planning to delete
+				// otherState. Instead, since we consider targetState to be equivalent to otherState (as we're merging them),
+				// we should imagine that the original transition actually looked like this:
+				//   otherState -(a)-> targetState
 				const fixedOtherChild = (otherChild === otherState) ? targetState : otherChild
 				this.registerTransition(targetState, transitionSymbol, fixedOtherChild)
 			}
@@ -246,7 +300,6 @@ export class NFA {
 				for (let nullChild of nullChildren) {
 					this.mergeStates(nullChild, state)
 					this.unregisterTransition(state, "", nullChild)
-					console.log("Eliminated null transition between", state, "and", nullChild)
 				}
 			}
 		})
@@ -536,6 +589,8 @@ export class NFA {
 }
 
 export class NFAState {
+	// Give each NFAState a unique ID so that it can be hashed
+	// for use in other data structures
 	static idNum = 0
 	
 	// TODO: reorder so that isTrapState is earlier?
