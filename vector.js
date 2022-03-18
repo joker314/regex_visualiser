@@ -1,3 +1,5 @@
+import {Matrix} from './util/matrix.js'
+
 function unitVectorInDirection (direction) {
 	const unitVector = new Vector(
 		Math.cos(direction),
@@ -67,14 +69,18 @@ export class Vector {
 	}
 	
 	rotate (angle) {
-		const newDirection = this.angle() + angle
-		const newLength = this.length() // rotating a vector doesn't change its length
-
-		const unitV = unitVectorInDirection(newDirection)
-		const scaledV = unitV.scale(newLength)
+		console.error("USING UPDATED CODE")
+		// Create a transformation matrix associated with a rotation through this angle
+		const transformationMatrix = Matrix.rotation(angle)
 		
-		//console.log(unitV.length(), "scaled by", newLength, "so now", scaledV.length(), unitV, scaledV)
-		return scaledV
+		// Convert this vector into a matrix
+		// Relies on this implementation of matrices being immutable
+		const vectorMatrix = new Matrix([this.components]).transpose()
+		
+		// Now perform the multiplication and convert the result back into a vector
+		// Matrix is a list of 1 row so need to get the [0]th index
+		const transformedVector = transformationMatrix.multiply(vectorMatrix).asArray()[0]
+		return new Vector(...transformedVector)
 	}
 	
 	fromOrigin () {

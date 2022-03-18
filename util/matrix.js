@@ -1,6 +1,6 @@
 import {enumerate} from '../util/iteration.js'
 
-class Matrix {
+export class Matrix {
 	constructor (content) {
 		this.content = content
 		
@@ -52,5 +52,12 @@ class Matrix {
 		}
 		
 		return new Matrix(resultingMatrix)
+	}
+	
+	/**
+	 * Returns the underlying array of this matrix
+	 */
+	asArray () {
+		return this.content
 	}
 }
