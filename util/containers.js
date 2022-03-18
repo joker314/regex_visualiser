@@ -184,6 +184,10 @@ class Stack {
 	}
 	
 	pop () {
+		if (this.underlyingList.isEmpty()) {
+			throw new Error("Cannot pop() from an empty stack")
+		}
+		
 		// Save a copy of the value of the head
 		const oldHead = this.underlyingList.head()
 		
