@@ -155,7 +155,7 @@ class Queue {
 	 * Removes an element from the queue, and returns it
 	 */
 	dequeue () {
-		if (this.tail().isEmpty()) {
+		if (this.underlyingList.tail().isEmpty()) {
 			throw new Error("Cannot dequeue from an empty queue")
 		}
 		
