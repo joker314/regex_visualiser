@@ -6,6 +6,7 @@
 
 class LinkedList {
 	static EMPTY_LIST; // will be given a value later
+	static START_SENTINEL = Symbol("Start of linked list") // can optionally be used by instantiator
 	
 	/**
 	 * Constructs a linked list from a head and a tail
@@ -130,13 +131,12 @@ class LinkedList {
  *
  * The queue is a first in, first out data structure
  */
-class Queue {
-	static START_SENTINEL = Symbol("Start of linked list") 
+class Queue { 
 	/**
 	 * Constructs an empty queue, that can be added to with .enqueue()
 	 */
 	constructor () {
-		this.underlyingList = new LinkedList(Queue.START_SENTINEL, LinkedList.EMPTY_LIST)
+		this.underlyingList = new LinkedList(LinkedList.START_SENTINEL, LinkedList.EMPTY_LIST)
 	}
 	
 	/**
@@ -175,7 +175,7 @@ class Queue {
 class Stack {
 	// Constructs an empty stack, that can be added to with .push()
 	constructor () {
-		this.underlyingList = new LinkedList()
+		this.underlyingList = new LinkedList(LinkedList.START_SENTINEL, LinkedList.EMPTY_LIST)
 	}
 	
 	push (value) {
@@ -184,7 +184,7 @@ class Stack {
 	}
 	
 	pop () {
-		const oldHead = this.underlyingList.head()
+		const oldHead = this.underlyingList.tail()
 		
 		return oldHead.unlink().value
 	}
