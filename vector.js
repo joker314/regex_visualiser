@@ -69,7 +69,6 @@ export class Vector {
 	}
 	
 	rotate (angle) {
-		console.error("USING UPDATED CODE")
 		// Create a transformation matrix associated with a rotation through this angle
 		const transformationMatrix = Matrix.rotation(angle)
 		
@@ -80,6 +79,7 @@ export class Vector {
 		// Now perform the multiplication and convert the result back into a vector
 		// Matrix is a list of 1 row so need to get the [0]th index
 		const transformedVector = transformationMatrix.multiply(vectorMatrix).asArray()[0]
+		console.log("the transformed vector is", transformedVector)
 		return new Vector(...transformedVector)
 	}
 	

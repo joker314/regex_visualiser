@@ -33,7 +33,7 @@ export class Matrix {
 			const resultingRow = []
 			resultingMatrix.push(resultingRow) // it's ok to do this at the start here because resultingRow is stored as a reference
 			
-			for (let col of this.getCols()) {
+			for (let col of otherMatrix.getCols()) {
 				const newEntry = row.reduce(
 					(accumulatedSum, thisCell, rowNumber) => {
 						// Get the associated cell in the other matrix (swapping rows and columns)
