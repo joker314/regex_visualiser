@@ -3,7 +3,10 @@
  * a pointer to the end of the list
  */
 // TODO: think of a way to abstract away the errors
+
 class DoublyLinkedList {
+	static EMPTY_LIST; // will be given a value later
+	
 	/**
 	 * Constructs a linked list from a head and a tail
 	 */
@@ -19,7 +22,9 @@ class DoublyLinkedList {
 		this.end = tail?.end ?? this
 		
 		// The head of `tail` is now no longer the first element in this list. Instead, this node is.
-		tail?.prev = this
+		if (tail) {
+			tail.prev = this
+		}
 	}
 	
 	/**
@@ -86,10 +91,34 @@ class DoublyLinkedList {
 	unlink () {
 		// There's no need for a temporary third variable because we're not modifying this.prev
 		// or this.next directly. Instead, we're modifying their properties.
-		this.prev?.next = this.next
-		this.next?.prev = this.prev
+		if (this.prev) {
+			this.prev.next = this.next
+		}
+		
+		if (this.next) {
+			this.next.prev = this.prev
+		}
 		
 		return this
+	}
+	
+	/**
+	 * Places the `newNode` just before the current node
+	 * Note: changes newNode.prev and newNode.next, so it is important that
+	 * newNode is not already part of an existing list.
+	 */
+	prepend (newNode) {
+		// fix this.prev's pointers
+		if (this.prev) {
+			this.prev.next = newNode
+		}
+		
+		// fix newNode's pointers
+		newNode.prev = this.prev
+		newNode.next = this
+		
+		// fix our own pointers
+		this.prev = newNode
 	}
 }
 
@@ -102,32 +131,37 @@ class DoublyLinkedList {
  * The queue is a first in, first out data structure
  */
 class Queue {
+	static START_SENTINEL = new Symbol("Start of linked list") 
 	/**
 	 * Constructs an empty queue, that can be added to with .enqueue()
 	 */
 	constructor () {
-		this.underlyingList = LinkedList.EMPTY_LIST
+		this.underlyingList = new DoublyLinkedList(Queue.START_SENTINEL, DoublyLinkedList.EMPTY_LIST)
 	}
 	
 	/**
-	 * Adds an element to the start of the queue
+	 * Adds an element to the queue
 	 */
 	enqueue (value) {
-		// Prepend the value to the beginning of the list
-		// Adding to the the beginning of a linked list is an O(1) operation
-		this.underlyingList = new LinkedList(value, this.underlyingList)
+		const linkedListNode = new DoublyLinkedList(value, null)
+		
+		// Append the value to the end of the list
+		// This is a special linked list data structure in which this operation is, unusually, O(1)
+		// We want to insert it just before the <empty list> value at the end.
+		this.underlyingList.end.prepend(linkedListNode)
 	}
 	
 	/**
-	 * Removes an element from the end of the queue, and returns it
-	 * (Error detection is done by the underlying LinkedList instance)
+	 * Removes an element from the queue, and returns it
 	 */
 	dequeue () {
-		// .end gets you the sentinal "empty list", so we apply .prev
-		// to get the last node that actually has a value associated with it.
-		const lastNode = this.underlyingList.end.prev
+		if (this.tail().isEmpty()) {
+			throw new Error("Cannot dequeue from an empty queue")
+		}
 		
-		return lastNode.unlink().value
+		// Return and remove the element that's just after the head
+		// The actual head is the START_SENTINEL, which doesn't store a useful value.
+		return this.underlyingList.tail().unlink().value
 	}
 }
 
