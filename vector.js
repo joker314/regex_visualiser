@@ -6,7 +6,6 @@ function unitVectorInDirection (direction) {
 		Math.sin(direction)
 	)
 	
-	//console.log("unit vector length is", unitVector.length())
 	return unitVector
 }
 
@@ -16,7 +15,6 @@ export class Vector {
 		this.dimension = this.components.length
 		
 		if (!this.components.every(component => typeof component === "number" && component === component)) {
-			console.log(this.components)
 			throw new Error("Components to a vector must be numbers")
 		}
 	}
