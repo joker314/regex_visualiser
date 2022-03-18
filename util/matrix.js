@@ -1,5 +1,3 @@
-import {enumerate} from '../util/iteration.js'
-
 export class Matrix {
 	constructor (content) {
 		this.content = content
@@ -30,18 +28,16 @@ export class Matrix {
 		const resultingMatrix = []
 		
 		// For each row in the original matrix
-		for (let [rowNumber, row] of enumerate(this.content)) {
+		for (let row of this.getRows()) {
 			// Calculate an entire row of the resulting matrix:
 			const resultingRow = []
-			resultingMatrix.push(resultingRow) // it's ok to do this here because resultingRow is stored as a reference
+			resultingMatrix.push(resultingRow) // it's ok to do this at the start here because resultingRow is stored as a reference
 			
-			for (let colNumber = 0; colNumber < otherMatrix.cols; colNumber++) {
+			for (let col of this.getCols()) {
 				const newEntry = row.reduce(
-					(accumulatedSum, thisCell, i) => {
+					(accumulatedSum, thisCell, rowNumber) => {
 						// Get the associated cell in the other matrix (swapping rows and columns)
-						const otherCell = otherMatrix.content[i][colNumber]
-						
-						console.log("Multiplying", thisCell, otherCell)
+						const otherCell = col[rowNumber]
 						return accumulatedSum + (thisCell * otherCell)
 					},
 				0) // initialise the sum with 0 because it's the value of an empty sum
@@ -55,9 +51,50 @@ export class Matrix {
 	}
 	
 	/**
+	 * Returns the `rowNumber`th row of the matrix (0-indexed, from the top)
+	 */
+	getRow (rowNumber) {
+		return this.content[rowNumber]
+	}
+	
+	/**
+	 * Returns the `colNumber`th column of the matrix (0-indexed, from the left)
+	 */
+	getCol (colNumber) {
+		// Map each row to the cell in that row that is also in the correct column
+		return this.content.map(row => row[colNumber])
+	}
+	
+	/**
+	 * Returns an iterable of all the rows in this matrix
+	 */
+	getRows () {
+		// In this case, the iterable happens to be an array
+		return this.content
+	}
+	
+	/**
+	 * Returns an iterable of all the columns in this matrix
+	 */
+	*getCols () {
+		// In this case, the iterable happens to be a Generator object
+		// which is returned implicitly as a result of the asterisk in `*getCols` above
+		for (let colNumber = 0; colNumber < this.cols; colNumber++) {
+			yield this.getCol(colNumber)
+		}
+	}
+	
+	/**
 	 * Returns the underlying array of this matrix
 	 */
 	asArray () {
 		return this.content
+	}
+	
+	/**
+	 * Swaps the rows and columns to produce a new matrix
+	 */
+	transpose () {
+		return new Matrix([...this.getCols()])
 	}
 }
