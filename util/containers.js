@@ -175,7 +175,7 @@ class Queue {
 class Stack {
 	// Constructs an empty stack, that can be added to with .push()
 	constructor () {
-		this.underlyingList = new LinkedList(LinkedList.START_SENTINEL, LinkedList.EMPTY_LIST)
+		this.underlyingList = LinkedList.EMPTY_LIST
 	}
 	
 	push (value) {
