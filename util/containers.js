@@ -184,8 +184,14 @@ class Stack {
 	}
 	
 	pop () {
-		const oldHead = this.underlyingList.tail()
+		// Save a copy of the value of the head
+		const oldHead = this.underlyingList.head()
 		
-		return oldHead.unlink().value
+		// Remove (unlink) the head of the list, and make the next element be the new
+		// head
+		this.underlyingList = this.underlyingList.unlink().tail()
+		
+		// Return the saved copy of the (now deleted) head
+		return oldHead
 	}
 }
