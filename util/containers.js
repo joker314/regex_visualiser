@@ -38,7 +38,7 @@ class LinkedList {
 		this.value = null
 		this.next = null
 		this.prev = null
-		this.end = null
+		this.end = this
 	}
 	
 	/**
