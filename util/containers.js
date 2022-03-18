@@ -1,10 +1,10 @@
 /**
- * An implementation of a linked list, with a modification to contain
+ * An implementation of a doubly linked list, with a modification to contain
  * a pointer to the end of the list
  */
 // TODO: think of a way to abstract away the errors
 
-class DoublyLinkedList {
+class LinkedList {
 	static EMPTY_LIST; // will be given a value later
 	
 	/**
@@ -131,19 +131,19 @@ class DoublyLinkedList {
  * The queue is a first in, first out data structure
  */
 class Queue {
-	static START_SENTINEL = new Symbol("Start of linked list") 
+	static START_SENTINEL = Symbol("Start of linked list") 
 	/**
 	 * Constructs an empty queue, that can be added to with .enqueue()
 	 */
 	constructor () {
-		this.underlyingList = new DoublyLinkedList(Queue.START_SENTINEL, DoublyLinkedList.EMPTY_LIST)
+		this.underlyingList = new LinkedList(Queue.START_SENTINEL, LinkedList.EMPTY_LIST)
 	}
 	
 	/**
 	 * Adds an element to the queue
 	 */
 	enqueue (value) {
-		const linkedListNode = new DoublyLinkedList(value, null)
+		const linkedListNode = new LinkedList(value, null)
 		
 		// Append the value to the end of the list
 		// This is a special linked list data structure in which this operation is, unusually, O(1)
