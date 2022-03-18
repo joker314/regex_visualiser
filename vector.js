@@ -77,9 +77,8 @@ export class Vector {
 		const vectorMatrix = new Matrix([this.components]).transpose()
 		
 		// Now perform the multiplication and convert the result back into a vector
-		// Matrix is a list of 1 row so need to get the [0]th index
-		const transformedVector = transformationMatrix.multiply(vectorMatrix).asArray()[0]
-		console.log("the transformed vector is", transformedVector)
+		// Matrix is a column vector, so get the [0]th column (this is the only column)
+		const transformedVector = transformationMatrix.multiply(vectorMatrix).getCol(0)
 		return new Vector(...transformedVector)
 	}
 	
