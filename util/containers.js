@@ -11,7 +11,7 @@ class LinkedList {
 	 * Constructs a linked list from a head and a tail
 	 */
 	constructor (head, tail) {
-		this.isEmpty = false
+		this.empty = false
 		this.value = head
 		this.next = tail
 		this.prev = null
@@ -34,7 +34,7 @@ class LinkedList {
 	 * TODO: check if this is needed?
 	 */
 	makeEmpty () {
-		this.isEmpty = true
+		this.empty = true
 		this.value = null
 		this.next = null
 		this.prev = null
@@ -54,7 +54,7 @@ class LinkedList {
 	 * Determines whether or not the list is empty
 	 */
 	isEmpty () {
-		return this.isEmpty
+		return this.empty
 	}
 	
 	/**
