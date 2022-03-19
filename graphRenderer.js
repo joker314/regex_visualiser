@@ -28,36 +28,50 @@ import {Canvas} from './canvas.js'
 export class GraphDrawingEngine {
 	// TODO: decide whether to use a queue or callback for I/O
 	constructor (canvasElement, graphNodes, graphEdges) {
+		// The canvasElement is an HTMLElement, which doesn't support very many
+		// features. Create an object which wraps over that HTMLElement so that
+		// manipulating the canvas can be done in a more object-oriented way.
 		this.canvas = new Canvas(canvasElement)
 		
+		// Initialise all the components/sprites of the drawing
 		this.graphNodes = graphNodes
 		this.graphEdges = graphEdges
 		this.zoomButtons = new ZoomButtons()
 		
-		
+		// Set up properties related to dragging
 		this.isMouseDown = false
 		this.fixedNode = null
 		
+		// Set up properties related to zooming
 		this.transformation = new Transformation(this.canvas.el.width / 2, this.canvas.el.height / 2, 1)
 		this.isRendering = false
 		
+		// Set up event listeners for dragging
 		this.listeners = []
 		this.registerEventListeners()
 		
+		// Set up d3 force-based simulation for graph drawing
 		const d3GraphEdges = this.graphEdges.flatMap(edge => edge.links)
 		const intermediateNodes = this.graphEdges.map(edge => edge.intermediateNode)
 
 		this.simulation = forceSimulation(this.graphNodes.concat(intermediateNodes))
 			.force("link", forceLink(d3GraphEdges).distance(edge => {
+				// The restorative force on the spring-like edges should be slightly stronger on
+				// self-loops, because self-loops are actually composed of several links joined
+				// in series
 				if (edge.source.isSelf || edge.target.isSelf) {
 					return 100
 				} else {
 					return 90
 				}
 			}))
+			// Each node should be repulsed (like an electrostatic force) from every other node
 			.force("charge", forceManyBody())
+			// All the nodes should be attracted to the centre of the screen, so they don't fly off
 			.force("center", forceCenter())
+			// Nodes should not be able to pass through each other
 			.force("collide", forceCollide(30).iterations(20))
+			// Set up a handler for rendering a frame on each "tick" of the simulation
 			.on("tick", this.render.bind(this))
 	}
 
@@ -70,8 +84,6 @@ export class GraphDrawingEngine {
 
 		this.graphEdges.forEach(edge => {
 			edge.render(this, timestamp)
-			// DEBUG TODO
-			//this.canvas.drawCircle(this.transformation.scalePoint(edge.intermediateNode), 10, "black")
 		})
 	}
 	
@@ -170,8 +182,6 @@ export class GraphNode {
 	}
 
 	render (engine, timestamp) {
-		console.log("node being drawn")
-		//console.log(engine)
 		const position = engine.transformation.scalePoint(this.getPoint())
 		
 		engine.canvas.drawCircle(position, 30, this.color)
@@ -183,7 +193,10 @@ export class GraphNode {
 		
 		// Add an inward orange arrow if it's the starting state
 		if (this.isStarting) {
-			// TODO: repetetive, can we abstract?
+			// While it might seem like the following two lines share a lot of content and so it would be good
+			// to abstract out the common features, it is actually important information that the arrow head and
+			// the spine of the arrow that needs to be explicitly included in the code. In other words, the fact
+			// that the two lines are the same is more like a coincidence.
 			const topLeft = engine.transformation.scalePoint(this.getPoint().positionVector().add(
 				new Vector(0, 60).rotate(3 * Math.PI / 4)
 			).fromOrigin())
