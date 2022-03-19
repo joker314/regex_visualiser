@@ -24,12 +24,18 @@ class Classroom {
 			") OR (" + // make sure results still show up if first name and surname have been swapped over
 				"users.last_name LIKE CONCAT('%', ?, '%') AND " +
 				"users.first_name LIKE CONCAT('%', ?, '%')" +
-			") ORDER BY users.last_name, users.first_name;"
+			") ORDER BY users.last_name, users.first_name;",
+			firstName,
+			lastName,
+			firstName,
+			lastName
 		)
 		
+		// Convert the students into objects so that other parts of the code
+		// can use it more easily
 		return studentRows.map(row => {
 			const [id, firstName, lastName] = row
-			new User(dbEngine, id, firstName)
+			return new User(dbEngine, id, firstName)
 		})
 	}
 }
