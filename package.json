@@ -1,0 +1,24 @@
+{
+  "name": "regex_visualisation",
+  "version": "1.0.0",
+  "description": "Parse regular expressions, convert them to NFAs and DFAs, and then render them onto a canvas",
+  "main": "server.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "node server.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/joker314/regex_bnf.git"
+  },
+  "author": "Max Smith",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/joker314/regex_bnf/issues"
+  },
+  "homepage": "https://github.com/joker314/regex_bnf#readme",
+  "dependencies": {
+    "express": "^4.17.3",
+    "express-session": "^1.17.2"
+  }
+}
