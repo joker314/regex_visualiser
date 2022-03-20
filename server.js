@@ -4,6 +4,8 @@ import express from 'express'
 import session from 'express-session'
 import {databasePromise} from './dbEngine.js'
 
+import {User} from './server/user.js'
+
 // Port to use if no PORT environment variable set (e.g. in dev environments)
 const DEFAULT_PORT = 8000
 
