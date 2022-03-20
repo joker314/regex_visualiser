@@ -1,6 +1,11 @@
-class User {
+import bcrypt from 'bcrypt'
+
+export class User {
 	static FIRST_NAME_LENGTH_LIMIT = 30
 	static LAST_NAME_LENGTH_LIMIT = 40
+	
+	static BCRYPT_SALT_ROUNDS = 10
+	
 	
 	constructor (dbEngine, id, username, firstName, lastName, canChangeName, isTeacher, teacherID, joinDate = new Date()) {
 		this.dbEngine = dbEngine
@@ -97,5 +102,22 @@ class User {
 			newLastName,
 			this.id
 		)
+	}
+	
+	static async fromPassword (dbEngine, username, password) {
+		const matchingPasswords = await dbEngine.run(
+			"SELECT `hashed_password`, `id`, `first_name`, `last_name`, `can_change_name`, `is_teacher`, `teacher_id`, `join_date` FROM `users` " +
+			"WHERE `username` = ? LIMIT 1;"
+		)
+		
+		if (matchedPasswords.length === 0) {
+			throw new ClientError("Nobody with that username found")
+		}
+		
+		const [passwordHash, ...otherData] = matchingPasswords[0]
+		
+		if (await bcrypt.compare(password, passwordHash)) {
+			return new User(...otherData)
+		}
 	}
 }

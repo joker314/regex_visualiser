@@ -1,6 +1,8 @@
 // Import libraries necessary to run the web server
 // This includes parsing cookies and handling sessions
-const express = require('express')
+import express from 'express'
+import session from 'express-session'
+
 const session = require('express-session')
 
 // Port to use if no PORT environment variable set (e.g. in dev environments)
@@ -27,6 +29,9 @@ app.use(session({
 	saveUninitialized: false,
 	resave: false
 }))
+
+app.use(express.urlencoded())
+
 /**
  * If we're in production, but for some reason we're not using HTTPS
  * then this is a security issue so we should throw an error and fail
@@ -43,9 +48,21 @@ if (app.get('env') === 'production') {
 	}
 }
 
-app.get('/login', (req, res) => {
-	req.session.test = req.query.test
-	res.send("Old: " + req.session.test + " New: " + req.query.test)
+app.post('/login', async (req, res) => {
+	try {
+		const signedInUser = await User.fromPassword(
+			req.body.username,
+			req.body.password
+		)
+	catch (e) {
+		if (e.name === 'ClientError') {
+			res.statusCode(400)
+			res.send("Client error: " + e.message)
+		} else {
+			// Reraise the exception
+			throw e;
+		}
+	}
 })
 
 app.use(express.static('client'))
