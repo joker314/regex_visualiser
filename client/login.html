@@ -10,14 +10,22 @@
 			<input type="submit">
 		</form>
 		
-		<h1>Create account</h1>
-		<form action="/register" method="POST">
+		<h1>Create account for student</h1>
+		<form action="/registerStudent" method="POST">
 			<label>Username: <input name="username" type="username"></label>
 			<label>Password: <input name="password" type="password"></label>
 			<label>First name: <input name="first_name"></label>
 			<label>Last name: <input name="last_name"></label>
 			<label>Are you a teacher? <input name="is_teacher" type="checkbox"></label>
 			<label>If you're a student, who is your teacher? <input name="teacher_id"></label>
+			<input type="submit">
+		</form>
+	
+		<h1>Create account for student</h1>
+		<form action="/registerTeacher" method="POST">
+			<label>Username: <input name="username" type="username"></label>
+			<label>Password: <input name="password" type="password"></label>
+			<label>Display name: <input name="name"></label>
 			<input type="submit">
 		</form>
 	</body>

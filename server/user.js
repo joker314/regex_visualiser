@@ -131,7 +131,7 @@ export class User {
 		const joinDate = new Date()
 		
 		const [result, fields] = await dbEngine.run(
-			"CALL register_new_user(?, ?, ?, ?, ?, ?, ?, @id_or_error_code); SELECT @id_or_error_code;",
+			"CALL register_new_student(?, ?, ?, ?, ?, ?, ?, @id_or_error_code); SELECT @id_or_error_code;",
 			passwordHash,
 			username,
 			firstName,
@@ -156,5 +156,31 @@ export class User {
 		}
 		
 		return new User(dbEngine, idOrErrorCode, username, firstName, lastName, canChangeName, false, teacherID, joinDate)
+	}
+	
+	async registerTeacher (dbEngine, username, password, preferredName) {
+		const passwordHash = await bcrypt.hash(password, User.BCRYPT_SALT_ROUNDS)
+		const joinDate = new Date()
+
+		const [result, fields] = await dbEngine.run(
+			"CALL register_new_student(?, ?, ?, ?, ?, ?, ?, @id_or_error_code); SELECT @id_or_error_code;",
+			passwordHash,
+			username,
+			preferredName
+			joinDate
+		)
+		
+		const idOrErrorCode = result?.[1]?.[0]?.["@id_or_error_code"]
+		
+		if (idOrErrorCode === null || idOrErrorCode === undefined) {
+			throw new Error("idOrErrorCode wasn't returned from the database correctly")
+		}
+		
+		if (idOrErrorCode === -1) {
+			throw new ClientError("That username is already taken. Try picking a different one")
+		}
+		
+		// TODO: create student and teacher objects so we don't have to specify null everywhere
+		return new User(dbEngine, idOrErrorCode, username, preferredName, null, null, true, joinDate)
 	}
 }

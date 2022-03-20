@@ -67,9 +67,9 @@ app.post('/login', async (req, res) => {
 	}
 })
 
-app.post('/register', async (req, res) => {
+app.post('/registerStudent', async (req, res) => {
 	try {
-		const signedInUser = await User.registerUser(
+		const signedInUser = await User.registerStudent(
 			connection,
 			req.body.username,
 			req.body.password,
@@ -80,12 +80,31 @@ app.post('/register', async (req, res) => {
 		)
 		
 		res.send("Nice to meet you " + signedInUser.firstName + " " + signedInUser.lastName)
-	} catch (e) {
-		if (e.name === 'ClientError') {
+	} catch (error) {
+		if (error.name === 'ClientError') {
 			res.status(400).send("Client error: " + e.message)
 		} else {
-			// Reraise the exception
-			throw e;
+			console.error(error)
+			res.status(500).send("The server experienced an unexpected error when processing your registration request. Try again later.")
+		}
+	}
+})
+
+app.post('/registerTeacher', async (req, res) => {
+	try {
+		const signedInUser = await User.registerTeacher(
+			connection,
+			req.body.username,
+			req.body.password,
+			req.body.name
+		)
+	} catch (error) {
+		// TODO: make factory function for this error checking and abstract it away
+		if (error.name === 'ClientError') {
+			res.status(400).send("Client error: " + e.message)
+		} else {
+			console.error(error)
+			res.status(500).send("The server experienced an unexpected error when processing your registration request. Try again later")
 		}
 	}
 })

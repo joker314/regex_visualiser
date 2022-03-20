@@ -23,7 +23,7 @@ CREATE TABLE IF NOT EXISTS `institutions` (
 
 CREATE TABLE IF NOT EXISTS `teachers` (
 	`id` INT NOT NULL, -- not auto increment - foreign key with users.id as parent
-	`school_affiliation_id` INT NOT NULL,
+	`school_affiliation_id` INT, -- a teacher doesn't have to immediately specify their school, so the 'NOT NULL' constraint is omitted
 	`name` VARCHAR(70), -- teachers might be more flexible with their names, e.g. 'Mr T'
 	PRIMARY KEY (`id`),
 	FOREIGN KEY (`id`) REFERENCES `users`(`id`),
@@ -108,4 +108,29 @@ CREATE PROCEDURE register_new_student (
 		END IF;
 	END IF;
 END //
+DELIMITER ;
+
+DROP PROCEDURE IF EXISTS register_new_teacher;
+DELIMITER //
+CREATE PROCEDURE register_new_teacher (
+	IN phash BINARY(60),
+	IN uname VARCHAR(30),
+	IN preferred_name VARCHAR(70),
+	IN jdate DATETIME,
+	OUT id_or_error_code INT
+) MODIFIES SQL DATA BEGIN
+	IF EXISTS (SELECT * FROM `users` WHERE `username` = uname) THEN
+		SET id_or_error_code = -1;
+	ELSE
+		INSERT INTO users (
+			`hashed_password`, `username`, `join_date`
+		) VALUES (
+			phash, uname, jdate
+		);
+		
+		SET id_or_error_code = LAST_INSERT_ID();
+		INSERT INTO teachers (`id`, `name`) VALUES (id_or_error_code, preferred_name);
+	END IF;
+END //
+
 DELIMITER ;
