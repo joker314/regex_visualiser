@@ -163,7 +163,7 @@ export class User {
 		const joinDate = new Date()
 
 		const [result, fields] = await dbEngine.run(
-			"CALL register_new_student(?, ?, ?, ?, ?, ?, ?, @id_or_error_code); SELECT @id_or_error_code;",
+			"CALL register_new_teacher(?, ?, ?, ?, @id_or_error_code); SELECT @id_or_error_code;",
 			passwordHash,
 			username,
 			preferredName,
