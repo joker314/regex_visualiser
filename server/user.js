@@ -111,7 +111,7 @@ export class User {
 			username
 		)
 		
-		if (matchedPasswords.length === 0) {
+		if (matchingPasswords.length === 0) {
 			throw new ClientError("Nobody with that username found")
 		}
 		
