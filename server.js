@@ -2,8 +2,7 @@
 // This includes parsing cookies and handling sessions
 import express from 'express'
 import session from 'express-session'
-
-const session = require('express-session')
+import {databasePromise} from './dbEngine.js'
 
 // Port to use if no PORT environment variable set (e.g. in dev environments)
 const DEFAULT_PORT = 8000
@@ -20,6 +19,8 @@ const app = express()
 const port = process.env.PORT || DEFAULT_PORT
 const usingHTTPS = process.env.USE_HTTPS || false // assume we don't use HTTPS in dev environments
 const sessionSecret = process.env.SECRET || INSECURE_SECRET
+
+const connection = await databasePromise
 
 // TODO: consider commenting each parameter?
 app.use(session({
@@ -54,7 +55,7 @@ app.post('/login', async (req, res) => {
 			req.body.username,
 			req.body.password
 		)
-	catch (e) {
+	} catch (e) {
 		if (e.name === 'ClientError') {
 			res.statusCode(400)
 			res.send("Client error: " + e.message)
