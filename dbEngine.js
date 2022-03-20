@@ -16,13 +16,42 @@ const connection = mysql.createConnection({
 	password: DB_PASS
 })
 
+/**
+ * Provides a uniform interface for interacting with the database, even if the type of database
+ * changes, or if the library used to interface with the database changes.
+ */
+class DatabaseEngine {
+	constructor (underlyingConnection) {
+		this.underlyingConnection = underlyingConnection
+	}
+	
+	// The MySQL library is callback-based, but our interface is Promise-based
+	/**
+	 * Execute an SQL query. Question marks are replaced with the placeholderValues, in the order
+	 * they appear in the query. Returns a promise which:
+	 *  - rejects with the error of the underlying database connection if there is an error; or
+	 *  - resolves with the data returned from the database if the query was successful
+	 */
+	run (sqlQuery, ...placeholderValues) {
+		return new Promise((resolve, reject) => {
+			this.underlyingConnection.query(sqlQuery, placeholderValues, (error, results, fields) => {
+				if (err) {
+					reject(err)
+				} else {
+					resolve(results)
+				}
+			})
+		})
+	}
+}
+
 export const databasePromise = new Promise((resolve, reject) => {
 	connection.connect(err => {
 		if (err) {
 			reject(err)
 		} else {
 			console.log("Established connection to MySQL database")
-			resolve(connection)
+			resolve(new DatabaseEngine(connection))
 		}
 	})
 })
