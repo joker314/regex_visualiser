@@ -35,8 +35,8 @@ class DatabaseEngine {
 	run (sqlQuery, ...placeholderValues) {
 		return new Promise((resolve, reject) => {
 			this.underlyingConnection.query(sqlQuery, placeholderValues, (error, results, fields) => {
-				if (err) {
-					reject(err)
+				if (error) {
+					reject(error)
 				} else {
 					resolve(results)
 				}
