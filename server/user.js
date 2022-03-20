@@ -158,7 +158,7 @@ export class User {
 		return new User(dbEngine, idOrErrorCode, username, firstName, lastName, canChangeName, false, teacherID, joinDate)
 	}
 	
-	async registerTeacher (dbEngine, username, password, preferredName) {
+	static async registerTeacher (dbEngine, username, password, preferredName) {
 		const passwordHash = await bcrypt.hash(password, User.BCRYPT_SALT_ROUNDS)
 		const joinDate = new Date()
 
