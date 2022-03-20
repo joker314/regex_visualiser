@@ -98,6 +98,8 @@ app.post('/registerTeacher', async (req, res) => {
 			req.body.password,
 			req.body.name
 		)
+		
+		res.send("Welcome, " + signedInUser.firstName)
 	} catch (error) {
 		// TODO: make factory function for this error checking and abstract it away
 		if (error.name === 'ClientError') {
