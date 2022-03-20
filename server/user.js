@@ -166,7 +166,7 @@ export class User {
 			"CALL register_new_student(?, ?, ?, ?, ?, ?, ?, @id_or_error_code); SELECT @id_or_error_code;",
 			passwordHash,
 			username,
-			preferredName
+			preferredName,
 			joinDate
 		)
 		
