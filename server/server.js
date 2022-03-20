@@ -4,7 +4,7 @@ import express from 'express'
 import session from 'express-session'
 import {databasePromise} from './dbEngine.js'
 
-import {User} from './server/user.js'
+import {User} from './user.js'
 
 // Port to use if no PORT environment variable set (e.g. in dev environments)
 const DEFAULT_PORT = 8000
@@ -69,7 +69,7 @@ app.post('/login', async (req, res) => {
 	}
 })
 
-app.use(express.static('client'))
+app.use(express.static('../client'))
 
 app.listen(port, () => {
 	console.log(`Running on port ${port}`)
