@@ -3,9 +3,9 @@ import bcrypt from 'bcrypt'
 export class User {
 	static FIRST_NAME_LENGTH_LIMIT = 30
 	static LAST_NAME_LENGTH_LIMIT = 40
+	static USERNAME_LENGTH_LIMIT = 30
 	
 	static BCRYPT_SALT_ROUNDS = 10
-	
 	
 	constructor (dbEngine, id, username, firstName, lastName, canChangeName, isTeacher, teacherID, joinDate = new Date()) {
 		this.dbEngine = dbEngine
@@ -106,7 +106,7 @@ export class User {
 	
 	static async fromPassword (dbEngine, username, password) {
 		const matchingPasswords = await dbEngine.run(
-			"SELECT `hashed_password`, `id`, `first_name`, `last_name`, `can_change_name`, `is_teacher`, `teacher_id`, `join_date` FROM users " +
+			"SELECT `hashed_password`, `id`, `username`, `first_name`, `last_name`, `can_change_name`, `is_teacher`, `teacher_id`, `join_date` FROM `users` " +
 			"WHERE username = ? LIMIT 1;",
 			username
 		)

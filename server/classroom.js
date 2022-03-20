@@ -1,4 +1,6 @@
 class Classroom {
+	static NAME_MAX_LENGTH = 60
+	
 	constructor (dbEngine, id, name, createdAt = new Date()) {
 		this.dbEngine = dbEngine
 		this.id = id
