@@ -118,6 +118,8 @@ export class User {
 		
 		if (await bcrypt.compare(password, passwordHash)) {
 			return new User(...otherData)
+		} else {
+			throw new ClientError("Password is wrong")
 		}
 	}
 }
