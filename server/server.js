@@ -76,7 +76,6 @@ app.post('/register', async (req, res) => {
 			req.body.first_name,
 			req.body.last_name,
 			true,
-			req.body.is_teacher,
 			req.body.teacher_id
 		)
 		

@@ -125,19 +125,18 @@ export class User {
 		}
 	}
 	
-	static async registerUser (dbEngine, username, password, firstName, lastName, canChangeName, isTeacher, teacherID) {
+	static async registerStudent (dbEngine, username, password, firstName, lastName, canChangeName, teacherID) {
 		// All must be in one query to avoid race conditions
 		const passwordHash = await bcrypt.hash(password, User.BCRYPT_SALT_ROUNDS)
 		const joinDate = new Date()
 		
 		const [result, fields] = await dbEngine.run(
-			"CALL register_new_user(?, ?, ?, ?, ?, ?, ?, ?, @id_or_error_code); SELECT @id_or_error_code;",
+			"CALL register_new_user(?, ?, ?, ?, ?, ?, ?, @id_or_error_code); SELECT @id_or_error_code;",
 			passwordHash,
 			username,
 			firstName,
 			lastName,
 			canChangeName,
-			isTeacher,
 			teacherID,
 			joinDate
 		)
@@ -156,6 +155,6 @@ export class User {
 			throw new ClientError("That teacher ID doesn't exist. Make sure you typed it in correctly.")
 		}
 		
-		return new User(dbEngine, idOrErrorCode, username, firstName, lastName, canChangeName, isTeacher, teacherID, joinDate)
+		return new User(dbEngine, idOrErrorCode, username, firstName, lastName, canChangeName, false, teacherID, joinDate)
 	}
 }

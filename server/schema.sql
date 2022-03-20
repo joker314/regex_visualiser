@@ -68,35 +68,46 @@ CREATE TABLE IF NOT EXISTS `classroom_memberships` (
 -- meant they were less searchable (broken over several lines) and syntax highlighting didn't work.
 -- Plus, syntax errors were only detectable at runtime and more parsing had to be done by the SQL engine every time the query
 -- would run.
-DROP PROCEDURE IF EXISTS register_new_user;
+
+DROP PROCEDURE IF EXISTS register_new_student;
 DELIMITER //
-CREATE PROCEDURE register_new_user (
+CREATE PROCEDURE register_new_student (
 	IN phash BINARY(60),
 	IN uname VARCHAR(30),
 	IN fname VARCHAR(30),
 	IN lname VARCHAR(40),
 	IN name_changeable BOOLEAN,
-	IN teacher_account BOOLEAN,
 	IN id_of_teacher INT,
 	IN jdate DATETIME,
 	OUT id_or_error_code INT
 ) MODIFIES SQL DATA BEGIN
 	SELECT COUNT(*) INTO @username_exists FROM users WHERE username = uname;
 	IF (@does_username_exist > 0) THEN
-		SET id_or_error_code = -1;
+		SET id_or_error_code = -1; -- error: username already exists
 	ELSE
-		SELECT COUNT(*) INTO @teacher_exists FROM users WHERE `is_teacher` = 1 AND `teacher_id` = id_of_teacher;
+		SELECT COUNT(*) INTO @teacher_exists FROM `teachers` WHERE `id` = id_of_teacher;
 		IF @teacher_exists = 0 THEN
-			SET id_or_error_code = -2;
+			SET id_or_error_code = -2; -- error: provided teacher doesn't exist
 		ELSE
 			INSERT INTO users (
-				hashed_password, username, first_name, last_name, can_change_name, is_teacher, teacher_id, join_date
+				`hashed_password`, `username`, `join_date`
 			) VALUES (
-				phash, uname, fname, lname, name_changeable, teacher_account, id_of_teacher, jdate
+				phash, uname, jdate
 			);
+			
+			-- there have been no errors, so set the id_or_error_code to the ID,
+			-- both so it can be returned later and also referenced in the next INSERT
+			-- statement
 			SET id_or_error_code = LAST_INSERT_ID();
+			
+			INSERT INTO students (
+				`id`, `first_name`, `last_name`, `can_change_name`, `teacher_id`
+			) VALUES (
+				@id_or_error_code, fname, lname, name_changeable, id_of_teacher
+			);
 		END IF;
 	END IF;
 END //
-
 DELIMITER ;
+
+DROP PROCEDURE IF EXISTS 
