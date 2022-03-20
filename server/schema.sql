@@ -2,22 +2,56 @@ CREATE DATABASE IF NOT EXISTS `regex_visualiser`;
 USE `regex_visualiser`;
 
 DROP TABLE IF EXISTS `users`;
-DROP TABLE IF EXISTS `classrooms`;
-DROP TABLE IF EXISTS `classroom_memberships`;
-
 CREATE TABLE IF NOT EXISTS `users` (
 	`id` INT NOT NULL AUTO_INCREMENT,
 	`hashed_password` BINARY(60) NOT NULL,
 	`username` VARCHAR(30) NOT NULL,
+	`join_date` DATETIME NOT NULL,
+	PRIMARY KEY (`id`),
+);
+
+DROP TABLE IF EXISTS `students`;
+CREATE TABLE `students` (
+	`u_id` INT NOT NULL,
 	`first_name` VARCHAR(30) NOT NULL,
 	`last_name` VARCHAR(40) NOT NULL,
 	`can_change_name` BOOLEAN NOT NULL,
-	`is_teacher` BOOLEAN NOT NULL,
-	`teacher_id` INT,
-	`join_date` DATETIME NOT NULL,
-	PRIMARY KEY (`id`)
+	`teacher_id` INT NOT NULL,
+	PRIMARY KEY (`u_id`),
+	FOREIGN KEY (`u_id`) REFERENCES `users`(`id`)
+	FOREIGN KEY (`teacher_id`) REFERENCES `teachers`(`t_id`); -- don't do ON DELETE CASCADE since students should not disappear when a teacher is removed
 );
 
+DROP TABLE IF EXISTS `teachers`;
+CREATE TABLE IF NOT EXISTS `teachers` (
+	`u_id` INT NOT NULL,
+	`school_affiliation_id` INT NOT NULL,
+	`name` VARCHAR(70), -- teachers might be more flexible with their names, e.g. 'Mr T'
+	PRIMARY KEY (`u_id`),
+	FOREIGN KEY (`u_id`) REFERENCES `users`(`u_id`);
+	FOREIGN KEY (`school_affiliation_id`) REFERENCES `institutions`(`i_id`)
+);
+
+-- Justification for this table is that in the future, it might be possible that other parameters
+-- of schools, like their websites, might be stored -- and this normalises in advance.
+DROP TABLE IF EXISTS `institutions`;
+CREATE TABLE IF NOT EXISTS `institutions` (
+	`i_id` INT NOT NULL AUTO_INCREMENT,
+	`school_name` VARCHAR(100),
+	PRIMARY KEY (`i_id`),
+	UNIQUE KEY (`school_name`)
+);
+
+DROP TABLE IF EXISTS `regexes`;
+CREATE TABLE IF NOT EXISTS `regexes` (
+	`r_id` INT NOT NULL AUTO_INCREMENT,
+	`author_id` INT NOT NULL,
+	`regex` VARCHAR(20),
+	PRIMARY KEY (`regex`),
+	FOREIGN KEY (`author_id`) REFERENCES `users`(`id`) ON DELETE CASCADE
+);
+
+DROP TABLE IF EXISTS `classrooms`;
 CREATE TABLE IF NOT EXISTS `classrooms` (
 	`id` int NOT NULL AUTO_INCREMENT,
 	`name` VARCHAR(60),
@@ -25,6 +59,7 @@ CREATE TABLE IF NOT EXISTS `classrooms` (
 	PRIMARY KEY (`id`)
 );
 
+DROP TABLE IF EXISTS `classroom_memberships`;
 CREATE TABLE IF NOT EXISTS `classroom_memberships` (
 	`user_id` INT NOT NULL,
 	`class_id` INT NOT NULL,

@@ -41,7 +41,7 @@ class DatabaseEngine {
 				if (error) {
 					reject(error)
 				} else {
-					resolve(results)
+					resolve([results, fields])
 				}
 			})
 		})
