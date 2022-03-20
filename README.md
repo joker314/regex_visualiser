@@ -10,5 +10,6 @@
 	- DB_HOST - the database hostname, default is 'localhost'
 	- DB_USER - the username for accessing the database, default is 'max'
 	- DB_PASS - the password for accessing the database, default is 'secretpass'
+	- DB_DATABASE - the name of the database to use, default is 'regex_visualiser'
 5. Create a database `regex_visualiser` and run `./schema.sql` to set up the correct tables
 6. Run `npm start` to launch the web server

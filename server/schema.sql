@@ -1,6 +1,10 @@
 CREATE DATABASE IF NOT EXISTS `regex_visualiser`;
 USE `regex_visualiser`;
 
+DROP TABLE IF EXISTS `users`;
+DROP TABLE IF EXISTS `classrooms`;
+DROP TABLE IF EXISTS `classroom_memberships`;
+
 CREATE TABLE IF NOT EXISTS `users` (
 	`id` INT NOT NULL AUTO_INCREMENT,
 	`hashed_password` BINARY(60) NOT NULL,
@@ -10,7 +14,7 @@ CREATE TABLE IF NOT EXISTS `users` (
 	`can_change_name` BOOLEAN NOT NULL,
 	`is_teacher` BOOLEAN NOT NULL,
 	`teacher_id` BOOLEAN NOT NULL,
-	`joined_at` DATETIME NOT NULL,
+	`join_date` DATETIME NOT NULL,
 	PRIMARY KEY (`id`)
 );
 
