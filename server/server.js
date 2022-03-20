@@ -50,7 +50,6 @@ if (app.get('env') === 'production') {
 		throw new Error("Using a hard-coded secret in a production environment is insecure")
 	}
 }
-
 app.post('/login', async (req, res) => {
 	try {
 		const signedInUser = await User.fromPassword(
@@ -60,8 +59,7 @@ app.post('/login', async (req, res) => {
 		)
 	} catch (e) {
 		if (e.name === 'ClientError') {
-			res.statusCode(400)
-			res.send("Client error: " + e.message)
+			res.status(400).send("Client error: " + e.message)
 		} else {
 			// Reraise the exception
 			throw e;
@@ -69,7 +67,31 @@ app.post('/login', async (req, res) => {
 	}
 })
 
-app.use(express.static('../client'))
+app.post('/register', async (req, res) => {
+	try {
+		const signedInUser = await User.registerUser(
+			connection,
+			req.body.username,
+			req.body.password,
+			req.body.first_name,
+			req.body.last_name,
+			true,
+			req.body.is_teacher,
+			req.body.teacher_id
+		)
+		
+		res.send("Nice to meet you " + signedInUser.firstName + " " + signedInUser.lastName)
+	} catch (e) {
+		if (e.name === 'ClientError') {
+			res.status(400).send("Client error: " + e.message)
+		} else {
+			// Reraise the exception
+			throw e;
+		}
+	}
+})
+
+app.use(express.static('client'))
 
 app.listen(port, () => {
 	console.log(`Running on port ${port}`)

@@ -124,4 +124,40 @@ export class User {
 			throw new ClientError("Password is wrong")
 		}
 	}
+	
+	static async registerUser (dbEngine, username, password, firstName, lastName, canChangeName, isTeacher, teacherID) {
+		// All must be in one query to avoid race conditions
+		const passwordHash = await bcrypt.hash(password, User.BCRYPT_SALT_ROUNDS)
+		const joinDate = new Date()
+		
+		const result = await dbEngine.run(
+			"CALL register_new_user(?, ?, ?, ?, ?, ?, ?, ?, @id_or_error_code); SELECT @id_or_error_code;",
+			passwordHash,
+			username,
+			firstName,
+			lastName,
+			canChangeName,
+			isTeacher,
+			teacherID,
+			joinDate
+		)
+		
+		console.log(result)
+		
+		if (result.length === 0) {
+			throw new Error("Database didn't return any results");
+		}
+		
+		if (result[0] === -1) {
+			throw new ClientError("That username is already taken. Try picking a different one")
+		}
+		
+		if (result[0] === -2) {
+			throw new ClientError("That teacher ID doesn't exist. Make sure you typed it in correctly.")
+		}
+		
+		const id = result[0]
+		
+		return new User(dbEngine, id, username, firstName, lastName, canChangeName, isTeacher, teacherID, joinDate)
+	}
 }

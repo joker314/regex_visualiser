@@ -16,17 +16,18 @@ class Classroom {
 		
 		const SELECT_USERS = 
 		
-		const studentRows = await dbEngine.run(
-			"SELECT users.id, users.first_name, users.last_name FROM users, classroom_memberships WHERE " +
-			"classroom_memberships.user_id = user.id AND " + // this causes an inner join on the user ID
-			"classroom_memberships.classroom_id = ? AND " + // this restricts results to those relating to this classroom
-			"(" +
-				"users.first_name LIKE CONCAT('%', ?, '%') AND " +
-				"users.last_name LIKE CONCAT('%', ?, '%')" +
-			") OR (" + // make sure results still show up if first name and surname have been swapped over
-				"users.last_name LIKE CONCAT('%', ?, '%') AND " +
-				"users.first_name LIKE CONCAT('%', ?, '%')" +
-			") ORDER BY users.last_name, users.first_name;",
+		const studentRows = await dbEngine.run(`
+			SELECT users.id, users.first_name, users.last_name FROM users, classroom_memberships WHERE 
+			classroom_memberships.user_id = user.id AND -- this causes an inner join on the user ID
+			classroom_memberships.classroom_id = ? AND -- this restricts results to those relating to this classroom
+			(
+				users.first_name LIKE CONCAT('%', ?, '%') AND
+				users.last_name LIKE CONCAT('%', ?, '%')
+			) OR ( -- make sure results still show up if first name and surname have been swapped over
+				users.last_name LIKE CONCAT('%', ?, '%') AND
+				users.first_name LIKE CONCAT('%', ?, '%')
+			) ORDER BY users.last_name, users.first_name;
+			`,
 			firstName,
 			lastName,
 			firstName,
