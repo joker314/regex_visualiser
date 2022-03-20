@@ -54,6 +54,7 @@ if (app.get('env') === 'production') {
 app.post('/login', async (req, res) => {
 	try {
 		const signedInUser = await User.fromPassword(
+			connection,
 			req.body.username,
 			req.body.password
 		)
