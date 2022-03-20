@@ -1,0 +1,10 @@
+Things left to do:
+	- create an object for Bezier curves for easier representation
+		- differentiate (empirically?) a bezier curve
+	
+	- create an object for server side stuff like User, Classroom, etc.
+	- build SQL PDO
+	- create queries
+	- implement AJAX and login flow
+	- security
+
