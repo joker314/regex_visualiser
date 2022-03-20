@@ -106,8 +106,9 @@ export class User {
 	
 	static async fromPassword (dbEngine, username, password) {
 		const matchingPasswords = await dbEngine.run(
-			"SELECT `hashed_password`, `id`, `first_name`, `last_name`, `can_change_name`, `is_teacher`, `teacher_id`, `join_date` FROM `users` " +
-			"WHERE `username` = ? LIMIT 1;"
+			"SELECT `hashed_password`, `id`, `first_name`, `last_name`, `can_change_name`, `is_teacher`, `teacher_id`, `join_date` FROM users " +
+			"WHERE username = ? LIMIT 1;",
+			username
 		)
 		
 		if (matchedPasswords.length === 0) {
