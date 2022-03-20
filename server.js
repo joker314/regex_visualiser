@@ -31,7 +31,7 @@ app.use(session({
 	resave: false
 }))
 
-app.use(express.urlencoded())
+app.use(express.urlencoded({extended: false}))
 
 /**
  * If we're in production, but for some reason we're not using HTTPS
