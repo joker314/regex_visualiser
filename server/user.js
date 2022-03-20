@@ -1,4 +1,5 @@
 import bcrypt from 'bcrypt'
+import {ClientError} from './clienterror.js'
 
 export class User {
 	static FIRST_NAME_LENGTH_LIMIT = 30
