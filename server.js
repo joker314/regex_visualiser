@@ -19,11 +19,13 @@ const port = process.env.PORT || DEFAULT_PORT
 const usingHTTPS = process.env.USE_HTTPS || false // assume we don't use HTTPS in dev environments
 const sessionSecret = process.env.SECRET || INSECURE_SECRET
 
+// TODO: consider commenting each parameter?
 app.use(session({
 	secret: sessionSecret,
-	secure: usingHTTPS,
+	cookie: {secure: usingHTTPS},
 	sameSite: true,
-	saveUninitialized: false
+	saveUninitialized: false,
+	resave: false
 }))
 /**
  * If we're in production, but for some reason we're not using HTTPS
@@ -42,9 +44,8 @@ if (app.get('env') === 'production') {
 }
 
 app.get('/login', (req, res) => {
-	res.send("Old: " + req.session.test + " New: " + req.query.test)
 	req.session.test = req.query.test
-	req.session.save()
+	res.send("Old: " + req.session.test + " New: " + req.query.test)
 })
 
 app.use(express.static('client'))
