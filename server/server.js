@@ -53,7 +53,7 @@ if (app.get('env') === 'production') {
 
 app.use((req, res, next) => {
 	if (req.session.userID) {
-		req.sesionUser = User.fromID(req.session.usedID)
+		req.sesionUser = User.fromID(connection, req.session.usedID)
 		console.log("Session user is set")
 	}
 	
