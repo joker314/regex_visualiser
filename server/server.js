@@ -55,7 +55,7 @@ app.get('/info', async (req, res) => {
 	if (req.session.userID === undefined) {
 		res.send('You need to log in first')
 	} else {
-		req.session
+		const user = new User()
 	}
 })
 
@@ -73,6 +73,8 @@ app.post('/login', async (req, res) => {
 			req.body.username,
 			req.body.password
 		)
+		
+		res.send("Nice to meet you " + signedInUser.firstName)
 	} catch (error) {
 		if (error.name === 'ClientError') {
 			res.status(400).send("Client error: " + error.message)

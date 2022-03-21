@@ -1,6 +1,9 @@
 import bcrypt from 'bcrypt'
 import {ClientError} from './clienterror.js'
 
+// TODO: might be able to use SELECT statements in stored procedures directly,
+// without doing a subsequent SELECT.
+
 export class User {
 	static FIRST_NAME_LENGTH_LIMIT = 30
 	static LAST_NAME_LENGTH_LIMIT = 40
@@ -44,6 +47,16 @@ export class User {
 			"DELETE FROM `users` WHERE `id` = ?;",
 			this.id
 		)
+	}
+	
+	static async fromID (dbEngine, id) {
+		const userData = await dbEngine.run(
+			"CALL fetch_user_from_id(?, @is_teach, @fname, @lname, @can_change_name, @teach_id, @name, @school_name); " +
+			"SELECT @is_teach, @fname, @lname, @can_change_name, @teach_id, @name, @school_name;",
+			id
+		)
+		
+		console.log(userData[0][1])
 	}
 	
 	async setName (nameChanger, newFirstName, newLastName) {
@@ -107,19 +120,19 @@ export class User {
 	
 	static async fromPassword (dbEngine, username, password) {
 		const matchingPasswords = await dbEngine.run(
-			"SELECT `hashed_password`, `id`, `username`, `first_name`, `last_name`, `can_change_name`, `is_teacher`, `teacher_id`, `join_date` FROM `users` " +
-			"WHERE username = ? LIMIT 1;",
+			"CALL fetch_password_hash(?, @o_hash, @o_id); SELECT @o_id, @o_hash;",
 			username
 		)
 		
-		if (matchingPasswords.length === 0) {
-			throw new ClientError("Nobody with that username found")
+		console.log(matchingPasswords[0][1][0])
+		const {"@o_id": userID, "@o_hash": passwordHash} = matchingPasswords[0][1][0]
+
+		if (userID === -1) {
+			throw new ClientError("No user with that username found")
 		}
 		
-		const [passwordHash, ...otherData] = matchingPasswords[0]
-		
 		if (await bcrypt.compare(password, passwordHash)) {
-			return new User(...otherData)
+			return User.fromID(dbEngine, userID)
 		} else {
 			throw new ClientError("Password is wrong")
 		}

@@ -2,11 +2,10 @@ CREATE DATABASE IF NOT EXISTS `regex_visualiser`;
 USE `regex_visualiser`;
 
 DROP TABLE IF EXISTS `users`, `institutions`, `teachers`, `students`, `regexes`, `classrooms`, `classroom_memberships`;
-
 CREATE TABLE IF NOT EXISTS `users` (
 	`id` INT NOT NULL AUTO_INCREMENT,
-	`hashed_password` BINARY(60) NOT NULL,
-	`username` VARCHAR(30) NOT NULL,
+	`hashed_password` VARCHAR(60) NOT NULL,
+	`username` VARCHAR(60) NOT NULL,
 	`join_date` DATETIME NOT NULL,
 	PRIMARY KEY (`id`)
 );
@@ -72,8 +71,8 @@ CREATE TABLE IF NOT EXISTS `classroom_memberships` (
 DROP PROCEDURE IF EXISTS register_new_student;
 DELIMITER //
 CREATE PROCEDURE register_new_student (
-	IN phash BINARY(60),
-	IN uname VARCHAR(30),
+	IN phash VARCHAR(60),
+	IN uname VARCHAR(60),
 	IN fname VARCHAR(30),
 	IN lname VARCHAR(40),
 	IN name_changeable BOOLEAN,
@@ -113,8 +112,8 @@ DELIMITER ;
 DROP PROCEDURE IF EXISTS register_new_teacher;
 DELIMITER //
 CREATE PROCEDURE register_new_teacher (
-	IN phash BINARY(60),
-	IN uname VARCHAR(30),
+	IN phash VARCHAR(60),
+	IN uname VARCHAR(60),
 	IN preferred_name VARCHAR(70),
 	IN jdate DATETIME,
 	OUT id_or_error_code INT
@@ -137,8 +136,38 @@ DELIMITER ;
 DROP PROCEDURE IF EXISTS fetch_password_hash;
 DELIMITER //
 CREATE PROCEDURE fetch_password_hash (
-	IN uname VARCHAR(30)
+	IN uname VARCHAR(60),
+	OUT r_hash VARCHAR(60),
+	OUT r_id INT
 ) READS SQL DATA BEGIN
-	SELECT `hashed_password`, `id` AS @id FROM `users` WHERE username = uname LIMIT 1;
-	-- TODO: fetch either a teacher row or a student row
-END
+	IF EXISTS (SELECT * FROM `users` WHERE `username` = uname) THEN
+		SELECT `hashed_password`, `id` INTO r_hash, r_id FROM `users` WHERE username = uname LIMIT 1;
+	ELSE
+		SET r_id = -1; -- negative value signals an error
+		SET r_hash = NULL;
+	END IF;
+END //
+DELIMITER ;
+
+DROP PROCEDURE IF EXISTS fetch_user_from_id;
+DELIMITER //
+CREATE PROCEDURE fetch_user_from_id (
+	IN u_id INT,
+	OUT r_is_teacher BOOLEAN,
+	-- student outputs
+	OUT r_fname VARCHAR(30),
+	OUT r_lname VARCHAR(40),
+	OUT r_can_change_name BOOLEAN,
+	OUT r_teacher_id INT,
+	-- teacher outputs
+	OUT r_name VARCHAR(70),
+	OUT r_school_name VARCHAR(100)
+) READS SQL DATA BEGIN
+	SELECT `first_name`, `last_name`, `can_change_name`, `teacher_id`
+	INTO r_fname, r_lname, r_can_change_name, r_teacher_id
+	FROM `students` WHERE `id` = u_id;
+	
+	SELECT `name` `school_name` INTO r_name, r_school_name FROM `teachers` INNER JOIN `institutions` ON
+		   `teachers`.`school_affiliation_id` = `institutions`.`i_id` WHERE `id` = u_id;
+END //
+DELIMITER ;
