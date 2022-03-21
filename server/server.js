@@ -51,12 +51,25 @@ if (app.get('env') === 'production') {
 	}
 }
 
-app.get('/info', async (req, res) => {
-	if (req.session.userID === undefined) {
-		res.send('You need to log in first')
-	} else {
-		const user = new User()
+app.use((req, res, next) => {
+	if (req.session.userID) {
+		req.sesionUser = User.fromID(req.session.usedID)
+		console.log("Session user is set")
 	}
+	
+	next()
+})
+
+app.get('/info', async (req, res) => {
+	if (req.sessionUser) {
+		if (req.sessionUser.isTeacher) {
+			res.send(`You are a teacher. Your preferred name is ${req.sessionUser.preferredName}`)
+		} else {
+			res.send(`You are a student. Your name is ${req.sessionUser.firstName} ${req.sessionUser.lastName}`)
+		}
+	}
+	
+	res.send("Logged out")
 })
 
 app.get('/logout', async (req, res) => {

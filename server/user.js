@@ -12,7 +12,7 @@ export class User {
 	static BCRYPT_SALT_ROUNDS = 10
 	
 	constructor (dbEngine, id, username, firstName, lastName, canChangeName, isTeacher, teacherID, joinDate = new Date()) {
-		this.dbEngine = dbEngine
+		this.dbEngine = dbEngine,
 		this.id = id
 		this.firstName = firstName
 		this.lastName = lastName
@@ -50,13 +50,28 @@ export class User {
 	}
 	
 	static async fromID (dbEngine, id) {
-		const userData = await dbEngine.run(
-			"CALL fetch_user_from_id(?, @is_teach, @fname, @lname, @can_change_name, @teach_id, @name, @school_name); " +
-			"SELECT @is_teach, @fname, @lname, @can_change_name, @teach_id, @name, @school_name;",
+		const userData = (await dbEngine.run(
+			"CALL fetch_user_from_id(?, @is_teach, @uname, @fname, @lname, @can_change_name, @teach_id, @name, @school_name); " +
+			"SELECT @is_teach, @uname, @fname, @lname, @can_change_name, @teach_id, @name, @school_name;",
 			id
-		)
+		))?.[0]?.[1]?.[0]
 		
-		console.log(userData[0][1])
+		console.log("User data is", userData)
+		
+		if (userData === undefined || !userData["@uname"]) {
+			throw new ClientError("Tried to lookup a user ID which doesn't exist. The account might have been deleted")
+		}
+		
+		console.log("The user data is", userData)
+		const {"@is_teach": isTeacher, "@uname": username} = userData
+
+		if (isTeacher) {
+			const {"@name": name, "@school_name": schoolName} = userData
+			return new Teacher(dbEngine, id, username, name, schoolName)
+		} else {
+			const {"@fname": firstName, "@lname": lastName, "@can_change_name": canChangeName, "@teach_id": teacherID} = userData
+			return new Student(dbEngine, id, username, firstName, lastName, canChangeName, teacherID)
+		}
 	}
 	
 	async setName (nameChanger, newFirstName, newLastName) {
@@ -168,7 +183,7 @@ export class User {
 			throw new ClientError("That teacher ID doesn't exist. Make sure you typed it in correctly.")
 		}
 		
-		return new User(dbEngine, idOrErrorCode, username, firstName, lastName, canChangeName, false, teacherID, joinDate)
+		return User.fromID(dbEngine, idOrErrorCode)
 	}
 	
 	static async registerTeacher (dbEngine, username, password, preferredName) {
@@ -195,5 +210,23 @@ export class User {
 		
 		// TODO: create student and teacher objects so we don't have to specify null everywhere
 		return new User(dbEngine, idOrErrorCode, username, preferredName, null, null, true, joinDate)
+	}
+}
+
+class Teacher extends User {
+	constructor (dbEngine, id, username, preferredName, joinDate) {
+		super(dbEngine, id, username, joinDate)
+		this.preferredName = preferredName
+		this.isTeacher = true
+	}
+}
+
+class Student extends User {
+	constructor (dbEngine, id, username, firstName, lastName, canChangeName, teacherID, joinDate) {
+		super(dbEngine, id, username, joinDate)
+		this.firstName = firstName
+		this.lastName = lastName
+		this.canChangeName = canChangeName
+		this.isTeacher = false
 	}
 }

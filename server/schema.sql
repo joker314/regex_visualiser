@@ -102,7 +102,7 @@ CREATE PROCEDURE register_new_student (
 			INSERT INTO students (
 				`id`, `first_name`, `last_name`, `can_change_name`, `teacher_id`
 			) VALUES (
-				@id_or_error_code, fname, lname, name_changeable, id_of_teacher
+				id_or_error_code, fname, lname, name_changeable, id_of_teacher
 			);
 		END IF;
 	END IF;
@@ -154,6 +154,7 @@ DELIMITER //
 CREATE PROCEDURE fetch_user_from_id (
 	IN u_id INT,
 	OUT r_is_teacher BOOLEAN,
+	OUT r_uname VARCHAR(60),
 	-- student outputs
 	OUT r_fname VARCHAR(30),
 	OUT r_lname VARCHAR(40),
@@ -167,7 +168,9 @@ CREATE PROCEDURE fetch_user_from_id (
 	INTO r_fname, r_lname, r_can_change_name, r_teacher_id
 	FROM `students` WHERE `id` = u_id;
 	
-	SELECT `name` `school_name` INTO r_name, r_school_name FROM `teachers` INNER JOIN `institutions` ON
+	SELECT `name`, `school_name` INTO r_name, r_school_name FROM `teachers` INNER JOIN `institutions` ON
 		   `teachers`.`school_affiliation_id` = `institutions`.`i_id` WHERE `id` = u_id;
+		   
+	SELECT `username` INTO r_uname FROM `users` WHERE `id` = u_id;
 END //
 DELIMITER ;
