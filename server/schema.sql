@@ -132,5 +132,13 @@ CREATE PROCEDURE register_new_teacher (
 		INSERT INTO teachers (`id`, `name`) VALUES (id_or_error_code, preferred_name);
 	END IF;
 END //
-
 DELIMITER ;
+
+DROP PROCEDURE IF EXISTS fetch_password_hash;
+DELIMITER //
+CREATE PROCEDURE fetch_password_hash (
+	IN uname VARCHAR(30)
+) READS SQL DATA BEGIN
+	SELECT `hashed_password`, `id` AS @id FROM `users` WHERE username = uname LIMIT 1;
+	-- TODO: fetch either a teacher row or a student row
+END

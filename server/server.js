@@ -50,6 +50,22 @@ if (app.get('env') === 'production') {
 		throw new Error("Using a hard-coded secret in a production environment is insecure")
 	}
 }
+
+app.get('/info', async (req, res) => {
+	if (req.session.userID === undefined) {
+		res.send('You need to log in first')
+	} else {
+		req.session
+	}
+})
+
+app.get('/logout', async (req, res) => {
+	// TODO: security!! make this POST with CSRF protection
+	// and make all the other POSTs have CSRF protection
+	// TODO: check callback params are correct
+	req.session.destroy(() => res.send("Logged out"))
+})
+
 app.post('/login', async (req, res) => {
 	try {
 		const signedInUser = await User.fromPassword(
@@ -79,6 +95,7 @@ app.post('/registerStudent', async (req, res) => {
 			req.body.teacher_id
 		)
 		
+		req.session.userID = signedInUser.id
 		res.send("Nice to meet you " + signedInUser.firstName + " " + signedInUser.lastName)
 	} catch (error) {
 		if (error.name === 'ClientError') {
@@ -99,6 +116,7 @@ app.post('/registerTeacher', async (req, res) => {
 			req.body.name
 		)
 		
+		req.session.userID = signedInUser.id
 		res.send("Welcome, " + signedInUser.firstName)
 	} catch (error) {
 		// TODO: make factory function for this error checking and abstract it away
