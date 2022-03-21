@@ -77,9 +77,9 @@ app.get('/info', async (req, res) => {
 		} else {
 			res.send(`You are a student. Your name is ${req.sessionUser.firstName} ${req.sessionUser.lastName}`)
 		}
+	} else {
+		res.send("Logged out")
 	}
-	
-	res.send("Logged out")
 })
 
 app.get('/logout', async (req, res) => {
@@ -97,7 +97,9 @@ app.post('/login', async (req, res) => {
 			req.body.password
 		)
 		
-		res.send("Nice to meet you " + signedInUser.firstName)
+		console.log("About to redirect")
+		res.redirect('/info')
+		console.log("Redirected")
 	} catch (error) {
 		if (error.name === 'ClientError') {
 			res.status(400).send("Client error: " + error.message)
