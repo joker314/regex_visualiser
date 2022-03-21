@@ -176,5 +176,6 @@ CREATE PROCEDURE fetch_user_from_id (
 	SELECT `name`, 'noschool' INTO r_name, r_school_name FROM `teachers` WHERE `id` = u_id;
 	
 	SELECT `username` INTO r_uname FROM `users` WHERE `id` = u_id;
+	SET r_is_teacher = EXISTS (SELECT * FROM `teachers` WHERE `id` = u_id);
 END //
 DELIMITER ;

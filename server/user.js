@@ -215,9 +215,10 @@ export class User {
 }
 
 class Teacher extends User {
-	constructor (dbEngine, id, username, preferredName, joinDate) {
+	constructor (dbEngine, id, username, preferredName, schoolName, joinDate) {
 		super(dbEngine, id, username, joinDate)
 		this.preferredName = preferredName
+		this.schoolName = schoolName
 		this.isTeacher = true
 	}
 }

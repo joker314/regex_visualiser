@@ -59,16 +59,18 @@ if (app.get('env') === 'production') {
 	}
 }
 
-app.use((req, res, next) => {
+app.use(async (req, res, next) => {
 	if (req.session.userID) {
-		req.sesionUser = User.fromID(connection, req.session.usedID)
+		req.sessionUser = await User.fromID(connection, req.session.userID)
 		console.log("Session user is set")
 	}
 	
+	console.log("Session middleware has run")
 	next()
 })
 
 app.get('/info', async (req, res) => {
+	console.log("Processing request")
 	if (req.sessionUser) {
 		if (req.sessionUser.isTeacher) {
 			res.send(`You are a teacher. Your preferred name is ${req.sessionUser.preferredName}`)
