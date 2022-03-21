@@ -1,3 +1,4 @@
+CREATE DATABASE IF NOT EXISTS `sessions`; -- library will populate this database itself
 CREATE DATABASE IF NOT EXISTS `regex_visualiser`;
 USE `regex_visualiser`;
 
@@ -168,9 +169,12 @@ CREATE PROCEDURE fetch_user_from_id (
 	INTO r_fname, r_lname, r_can_change_name, r_teacher_id
 	FROM `students` WHERE `id` = u_id;
 	
-	SELECT `name`, `school_name` INTO r_name, r_school_name FROM `teachers` INNER JOIN `institutions` ON
-		   `teachers`.`school_affiliation_id` = `institutions`.`i_id` WHERE `id` = u_id;
-		   
+	-- Temporarily disabled while institutions are not added at log in time
+	-- SELECT `name`, `school_name` INTO r_name, r_school_name FROM `teachers` INNER JOIN `institutions` ON
+	--	   `teachers`.`school_affiliation_id` = `institutions`.`i_id` WHERE `id` = u_id;
+	
+	SELECT `name`, 'noschool' INTO r_name, r_school_name FROM `teachers` WHERE `id` = u_id;
+	
 	SELECT `username` INTO r_uname FROM `users` WHERE `id` = u_id;
 END //
 DELIMITER ;

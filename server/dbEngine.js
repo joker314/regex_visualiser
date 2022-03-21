@@ -11,12 +11,16 @@ if (process.env.NODE_ENV === 'production' && DB_PASS === DB_TESTING_PASS) {
 	throw new Error("Using hard-coded database password in production is insecure")
 }
 
-const connection = mysql.createConnection({
+export const MYSQL_COMMON_SETTINGS = {
 	host: DB_HOST,
 	user: DB_USER,
-	password: DB_PASS,
-	database: DB_DATABASE,
-	multipleStatements: true
+	password: DB_PASS
+}
+
+const connection = mysql.createConnection({
+	...MYSQL_COMMON_SETTINGS,
+	multipleStatements: true,
+	database: DB_DATABASE
 })
 
 /**

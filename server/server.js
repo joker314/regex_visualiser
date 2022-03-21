@@ -2,7 +2,8 @@
 // This includes parsing cookies and handling sessions
 import express from 'express'
 import session from 'express-session'
-import {databasePromise} from './dbEngine.js'
+import createSessionStore from 'express-mysql-session'
+import {databasePromise, MYSQL_COMMON_SETTINGS} from './dbEngine.js'
 
 import {User} from './user.js'
 
@@ -22,6 +23,12 @@ const port = process.env.PORT || DEFAULT_PORT
 const usingHTTPS = process.env.USE_HTTPS || false // assume we don't use HTTPS in dev environments
 const sessionSecret = process.env.SECRET || INSECURE_SECRET
 
+const MySQLStore = createSessionStore(session)
+const sessionStore = new MySQLStore({
+	...MYSQL_COMMON_SETTINGS,
+	database: 'sessions'
+})
+
 const connection = await databasePromise
 
 // TODO: consider commenting each parameter?
@@ -30,7 +37,8 @@ app.use(session({
 	cookie: {secure: usingHTTPS},
 	sameSite: true,
 	saveUninitialized: false,
-	resave: false
+	resave: false,
+	store: sessionStore
 }))
 
 app.use(express.urlencoded({extended: false}))

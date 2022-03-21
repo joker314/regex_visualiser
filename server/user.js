@@ -50,6 +50,7 @@ export class User {
 	}
 	
 	static async fromID (dbEngine, id) {
+		console.log("Requesting user ID " + id)
 		const userData = (await dbEngine.run(
 			"CALL fetch_user_from_id(?, @is_teach, @uname, @fname, @lname, @can_change_name, @teach_id, @name, @school_name); " +
 			"SELECT @is_teach, @uname, @fname, @lname, @can_change_name, @teach_id, @name, @school_name;",
