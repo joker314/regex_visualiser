@@ -30,7 +30,7 @@
 			const suggestions = await response.json()
 			
 			INSTITUTION_LIST.replaceChildren(
-				suggestions.map(
+				...suggestions.map(
 					suggestion => {
 						const htmlOption = document.createElement("OPTION")
 						htmlOption.value = suggestion
