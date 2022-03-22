@@ -12,7 +12,7 @@ export class Institution {
 		// Now actually run the query
 		const [rows, fields] = await dbEngine.run(
 			"SELECT `school_name` FROM `institutions` WHERE `school_name` LIKE ? LIMIT ?;",
-			escapedQuery,
+			"%" + escapedQuery + "%",
 			limit
 		)
 		
