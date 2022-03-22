@@ -80,7 +80,7 @@ app.get('/info', async (req, res) => {
 	console.log("Processing request")
 	if (req.sessionUser) {
 		if (req.sessionUser.isTeacher) {
-			res.send(`You are a teacher. Your preferred name is ${req.sessionUser.preferredName}`)
+			res.send(`You are a teacher. Your preferred name is ${req.sessionUser.preferredName}. Your school is ${req.sessionUser.schoolName}`)
 		} else {
 			res.send(`You are a student. Your name is ${req.sessionUser.firstName} ${req.sessionUser.lastName}`)
 		}
