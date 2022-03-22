@@ -12,3 +12,5 @@ Explicitly set collation on database to be case insensitive where appropriate
 Implement a merge sort etc. for showing the list of institutions according to:
 	- prefix match
 	- then alphabetical order
+
+Use the ELSE IF feature more often in SQL

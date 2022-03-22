@@ -125,7 +125,7 @@ CREATE PROCEDURE register_new_teacher (
 	START TRANSACTION;
 	IF EXISTS (SELECT * FROM `users` WHERE `username` = uname) THEN
 		SET id_or_error_code = -1;
-	ELSE IF NOT EXISTS (SELECT * FROM `institutions` WHERE `i_id` = institution_id) THEN
+	ELSEIF NOT EXISTS (SELECT * FROM `institutions` WHERE `i_id` = institution_id) THEN
 		SET id_or_error_code = -2;
 	ELSE
 		INSERT INTO users (
