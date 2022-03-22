@@ -133,7 +133,7 @@ CREATE PROCEDURE register_new_teacher (
 		);
 		
 		SET id_or_error_code = LAST_INSERT_ID();
-		INSERT INTO teachers (`id`, `name`, `i_id`) VALUES (id_or_error_code, preferred_name, institution_id);
+		INSERT INTO teachers (`id`, `name`, `school_affiliation_id`) VALUES (id_or_error_code, preferred_name, institution_id);
 	END IF;
 	COMMIT;
 END //
