@@ -6,6 +6,7 @@ import createSessionStore from 'express-mysql-session'
 import {databasePromise, MYSQL_COMMON_SETTINGS} from './dbEngine.js'
 
 import {User} from './user.js'
+import {Institution} from './institution.js'
 
 // Port to use if no PORT environment variable set (e.g. in dev environments)
 const DEFAULT_PORT = 8000
@@ -61,8 +62,14 @@ if (app.get('env') === 'production') {
 
 app.use(async (req, res, next) => {
 	if (req.session.userID) {
-		req.sessionUser = await User.fromID(connection, req.session.userID)
-		console.log("Session user is set")
+		try {
+			req.sessionUser = await User.fromID(connection, req.session.userID)
+			console.log("Session user is set")
+		} catch (error) {
+			req.session.destroy()
+			console.error("Cleared the session because trying to fetch the associated user led to an error")
+			console.error(error)
+		}
 	}
 	
 	console.log("Session middleware has run")
@@ -80,6 +87,17 @@ app.get('/info', async (req, res) => {
 	} else {
 		res.send("Logged out")
 	}
+})
+
+app.get('/api/institutions/search', async (req, res) => {
+	console.log("Searching", req.query.query)
+	res.send(JSON.stringify(await Institution.search(connection, req.query.query)))
+})
+
+app.post('/api/institutions/add', async (req, res) => {
+	console.log("The POST body is", req.body)
+	console.log("Adding", req.body.name)
+	res.send(await Institution.add(connection, req.body.name))
 })
 
 app.get('/logout', async (req, res) => {

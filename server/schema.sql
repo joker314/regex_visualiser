@@ -179,3 +179,21 @@ CREATE PROCEDURE fetch_user_from_id (
 	SET r_is_teacher = EXISTS (SELECT * FROM `teachers` WHERE `id` = u_id);
 END //
 DELIMITER ;
+
+DROP PROCEDURE IF EXISTS insert_new_school;
+DELIMITER //
+CREATE PROCEDURE insert_new_school (
+	IN sch_name VARCHAR(100),
+	OUT r_id INT
+) READS SQL DATA BEGIN
+	IF NOT EXISTS (SELECT * FROM `institutions` WHERE `school_name` = sch_name) THEN
+		INSERT INTO `institutions` (
+			`school_name`
+		) VALUES (
+			sch_name
+		);
+	END IF;
+	
+	SELECT `i_id` INTO r_id FROM `institutions` WHERE `school_name` = sch_name;
+END //
+DELIMITER ;

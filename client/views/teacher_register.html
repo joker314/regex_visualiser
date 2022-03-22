@@ -1,0 +1,63 @@
+<h1>Create account for teacher</h1>
+<form action="/registerTeacher" method="POST">
+	<label>Username: <input name="username" type="username"></label>
+	<label>Password: <input name="password" type="password"></label>
+	<label>Display name: <input name="name"></label>
+	<label>Institution:
+		<input id="institution_name" list="institution_list"></label>
+		<button type="button" id="confirm_institution">Confirm institution</button>
+		<input style="border: 2px solid red;" name="institution_id">
+	<input type="submit" disabled id="submit_button">
+</form>
+
+<datalist id="institution_list"></datalist>
+
+<!-- TODO: move to a separate script file -->
+<script>
+	const INSTITUTION_NAME_INPUT = document.querySelector("#institution_name")
+	const INSTITUTION_LIST = document.querySelector("#institution_list")
+	const CONFIRM_INSTITUTION = document.querySelector("#confirm_institution")
+	const INSTITUTION_ID = document.querySelector("[name='institution_id']")
+	const SUBMIT_BUTTON = document.querySelector("#submit_button")
+	
+	INSTITUTION_NAME_INPUT.addEventListener("input", async function (event) {
+		console.log("Running event listener")
+		const partialQuery = INSTITUTION_NAME_INPUT.value
+		const response = await fetch("/api/institutions/search?query=" + encodeURIComponent(partialQuery))
+		
+		if (response.ok) {
+			console.log("ok")
+			const suggestions = await response.json()
+			
+			INSTITUTION_LIST.replaceChildren(
+				suggestions.map(
+					suggestion => {
+						const htmlOption = document.createElement("OPTION")
+						htmlOption.value = suggestion
+						return htmlOption
+					}
+				)
+			)
+		} else {
+			console.error("There was a problem loading the list of existing institutions")
+		}
+	})
+	
+	CONFIRM_INSTITUTION.addEventListener("click", async function (event) {
+		INSTITUTION_NAME_INPUT.disabled = true
+		
+		const saveInstitutionRequest = new XMLHttpRequest()
+		saveInstitutionRequest.open("POST", "/api/institutions/add")
+		saveInstitutionRequest.setRequestHeader("Content-type", "application/x-www-form-urlencoded");
+		saveInstitutionRequest.onreadystatechange = function () {
+			if (saveInstitutionRequest.readyState === 4) {
+				const id = JSON.parse(saveInstitutionRequest.responseText).id
+				
+				INSTITUTION_ID.value = id
+				SUBMIT_BUTTON.disabled = false
+			}
+		}
+		
+		saveInstitutionRequest.send("name=" + encodeURIComponent(INSTITUTION_NAME_INPUT.value))
+	})
+</script>
