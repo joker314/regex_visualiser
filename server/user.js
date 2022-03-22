@@ -210,6 +210,10 @@ export class User {
 			throw new ClientError("That username is already taken. Try picking a different one")
 		}
 		
+		if (idOrErrorCode === -2) {
+			throw new ClientError("The given institution doesn't exist")
+		}
+		
 		// TODO: create student and teacher objects so we don't have to specify null everywhere
 		return new User(dbEngine, idOrErrorCode, username, preferredName, null, null, true, joinDate)
 	}
