@@ -187,15 +187,16 @@ export class User {
 		return User.fromID(dbEngine, idOrErrorCode)
 	}
 	
-	static async registerTeacher (dbEngine, username, password, preferredName) {
+	static async registerTeacher (dbEngine, username, password, preferredName, institutionID) {
 		const passwordHash = await bcrypt.hash(password, User.BCRYPT_SALT_ROUNDS)
 		const joinDate = new Date()
 
 		const [result, fields] = await dbEngine.run(
-			"CALL register_new_teacher(?, ?, ?, ?, @id_or_error_code); SELECT @id_or_error_code;",
+			"CALL register_new_teacher(?, ?, ?, ?, ?, @id_or_error_code); SELECT @id_or_error_code;",
 			passwordHash,
 			username,
 			preferredName,
+			institutionID,
 			joinDate
 		)
 		

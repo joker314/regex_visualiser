@@ -81,6 +81,7 @@ CREATE PROCEDURE register_new_student (
 	IN jdate DATETIME,
 	OUT id_or_error_code INT
 ) MODIFIES SQL DATA BEGIN
+	START TRANSACTION READ WRITE;
 	SELECT COUNT(*) INTO @username_exists FROM users WHERE username = uname;
 	IF (@does_username_exist > 0) THEN
 		SET id_or_error_code = -1; -- error: username already exists
@@ -107,6 +108,7 @@ CREATE PROCEDURE register_new_student (
 			);
 		END IF;
 	END IF;
+	COMMIT;
 END //
 DELIMITER ;
 
@@ -116,9 +118,11 @@ CREATE PROCEDURE register_new_teacher (
 	IN phash VARCHAR(60),
 	IN uname VARCHAR(60),
 	IN preferred_name VARCHAR(70),
+	IN institution_id INT,
 	IN jdate DATETIME,
 	OUT id_or_error_code INT
 ) MODIFIES SQL DATA BEGIN
+	START TRANSACTION;
 	IF EXISTS (SELECT * FROM `users` WHERE `username` = uname) THEN
 		SET id_or_error_code = -1;
 	ELSE
@@ -129,8 +133,9 @@ CREATE PROCEDURE register_new_teacher (
 		);
 		
 		SET id_or_error_code = LAST_INSERT_ID();
-		INSERT INTO teachers (`id`, `name`) VALUES (id_or_error_code, preferred_name);
+		INSERT INTO teachers (`id`, `name`, `i_id`) VALUES (id_or_error_code, preferred_name, institution_id);
 	END IF;
+	COMMIT;
 END //
 DELIMITER ;
 
@@ -141,12 +146,14 @@ CREATE PROCEDURE fetch_password_hash (
 	OUT r_hash VARCHAR(60),
 	OUT r_id INT
 ) READS SQL DATA BEGIN
+	START TRANSACTION;
 	IF EXISTS (SELECT * FROM `users` WHERE `username` = uname) THEN
 		SELECT `hashed_password`, `id` INTO r_hash, r_id FROM `users` WHERE username = uname LIMIT 1;
 	ELSE
 		SET r_id = -1; -- negative value signals an error
 		SET r_hash = NULL;
 	END IF;
+	COMMIT;
 END //
 DELIMITER ;
 
@@ -165,18 +172,17 @@ CREATE PROCEDURE fetch_user_from_id (
 	OUT r_name VARCHAR(70),
 	OUT r_school_name VARCHAR(100)
 ) READS SQL DATA BEGIN
+	START TRANSACTION;
 	SELECT `first_name`, `last_name`, `can_change_name`, `teacher_id`
 	INTO r_fname, r_lname, r_can_change_name, r_teacher_id
 	FROM `students` WHERE `id` = u_id;
 	
-	-- Temporarily disabled while institutions are not added at log in time
-	-- SELECT `name`, `school_name` INTO r_name, r_school_name FROM `teachers` INNER JOIN `institutions` ON
-	--	   `teachers`.`school_affiliation_id` = `institutions`.`i_id` WHERE `id` = u_id;
-	
-	SELECT `name`, 'noschool' INTO r_name, r_school_name FROM `teachers` WHERE `id` = u_id;
+	SELECT `name`, `school_name` INTO r_name, r_school_name FROM `teachers` INNER JOIN `institutions` ON
+		   `teachers`.`school_affiliation_id` = `institutions`.`i_id` WHERE `id` = u_id;
 	
 	SELECT `username` INTO r_uname FROM `users` WHERE `id` = u_id;
 	SET r_is_teacher = EXISTS (SELECT * FROM `teachers` WHERE `id` = u_id);
+	COMMIT;
 END //
 DELIMITER ;
 
@@ -186,6 +192,7 @@ CREATE PROCEDURE insert_new_school (
 	IN sch_name VARCHAR(100),
 	OUT r_id INT
 ) READS SQL DATA BEGIN
+	START TRANSACTION;
 	IF NOT EXISTS (SELECT * FROM `institutions` WHERE `school_name` = sch_name) THEN
 		INSERT INTO `institutions` (
 			`school_name`
@@ -195,5 +202,6 @@ CREATE PROCEDURE insert_new_school (
 	END IF;
 	
 	SELECT `i_id` INTO r_id FROM `institutions` WHERE `school_name` = sch_name;
+	COMMIT;
 END //
 DELIMITER ;

@@ -158,7 +158,8 @@ app.post('/registerTeacher', async (req, res) => {
 			connection,
 			req.body.username,
 			req.body.password,
-			req.body.name
+			req.body.name,
+			req.body.institution_id
 		)
 		
 		req.session.userID = signedInUser.id
