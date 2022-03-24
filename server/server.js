@@ -132,7 +132,7 @@ app.post('/api/institutions/add', async (req, res) => {
 	res.send(await Institution.add(connection, req.body.name))
 })
 
-app.post('/api/regex/add', async (req, res) => {
+app.post('/api/regex/add', errorWrapper(async (req, res) => {
 	if (req.sessionUser) {
 		res.send(await Regex.add(
 			connection,
@@ -141,13 +141,9 @@ app.post('/api/regex/add', async (req, res) => {
 			req.body.sample_input
 		))
 	} else {
-		req.status(400).send(
-			JSON.stringify({
-				error: "You are not logged in anymore so cannot save the regular expression to the server."
-			})
-		)
+		throw new ClientError("You are not logged in anymore so cannot save the regular expression to the server.")
 	}
-})
+}, true))
 
 app.get('/logout', async (req, res) => {
 	// TODO: security!! make this POST with CSRF protection
@@ -156,73 +152,43 @@ app.get('/logout', async (req, res) => {
 	req.session.destroy(() => res.send("Logged out"))
 })
 
-app.post('/login', async (req, res) => {
-	try {
-		const signedInUser = await User.fromPassword(
-			connection,
-			req.body.username,
-			req.body.password
-		)
-		
-		console.log("About to redirect")
-		res.redirect('/info')
-		console.log("Redirected")
-	} catch (error) {
-		if (error.name === 'ClientError') {
-			res.status(400).send("Client error: " + error.message)
-		} else {
-			console.error(error)
-			res.status(500).send("The server experienced an unexpected error when processing your registration request. Try again later.")
-		}
-	}
-})
+app.post('/login', errorWrapper(async (req, res) => {
+	const signedInUser = await User.fromPassword(
+		connection,
+		req.body.username,
+		req.body.password
+	)
 
-app.post('/registerStudent', async (req, res) => {
-	try {
-		const signedInUser = await User.registerStudent(
-			connection,
-			req.body.username,
-			req.body.password,
-			req.body.first_name,
-			req.body.last_name,
-			true,
-			req.body.teacher_id
-		)
-		
-		req.session.userID = signedInUser.id
-		res.send("Nice to meet you " + signedInUser.firstName + " " + signedInUser.lastName)
-	} catch (error) {
-		if (error.name === 'ClientError') {
-			res.status(400).send("Client error: " + error.message)
-		} else {
-			console.error(error)
-			res.status(500).send("The server experienced an unexpected error when processing your registration request. Try again later.")
-		}
-	}
-})
+	res.redirect('/info')
+}))
 
-app.post('/registerTeacher', async (req, res) => {
-	try {
-		const signedInUser = await User.registerTeacher(
-			connection,
-			req.body.username,
-			req.body.password,
-			req.body.name,
-			req.body.institution_id
-		)
-		
-		req.session.userID = signedInUser.id
-		res.send("Welcome, " + signedInUser.firstName)
-	} catch (error) {
-		// TODO: make factory function for this error checking and abstract it away
-		if (error.name === 'ClientError') {
-			res.status(400).send("Client error: " + error.message)
-		} else {
-			console.error(error)
-			res.status(500).send("The server experienced an unexpected error when processing your registration request. Try again later")
-		}
-	}
-})
+app.post('/registerStudent', errorWrapper(async (req, res) => {
+	const signedInUser = await User.registerStudent(
+		connection,
+		req.body.username,
+		req.body.password,
+		req.body.first_name,
+		req.body.last_name,
+		true,
+		req.body.teacher_id
+	)
+
+	req.session.userID = signedInUser.id
+	res.send("Nice to meet you " + signedInUser.firstName + " " + signedInUser.lastName)
+}))
+
+app.post('/registerTeacher', errorWrapper(async (req, res) => {
+	const signedInUser = await User.registerTeacher(
+		connection,
+		req.body.username,
+		req.body.password,
+		req.body.name,
+		req.body.institution_id
+	)
+	
+	req.session.userID = signedInUser.id
+	res.send("Welcome, " + signedInUser.firstName)
+}))
 
 app.use(express.static('client'))
 
