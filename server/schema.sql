@@ -44,7 +44,8 @@ CREATE TABLE `students` (
 CREATE TABLE IF NOT EXISTS `regexes` (
 	`r_id` INT NOT NULL AUTO_INCREMENT,
 	`author_id` INT NOT NULL,
-	`regex` VARCHAR(20),
+	`regex` VARCHAR(100),
+	`sample_input` VARCHAR(100),
 	PRIMARY KEY (`r_id`),
 	FOREIGN KEY (`author_id`) REFERENCES `users`(`id`) ON DELETE CASCADE
 );
@@ -205,5 +206,51 @@ CREATE PROCEDURE insert_new_school (
 	
 	SELECT `i_id` INTO r_id FROM `institutions` WHERE `school_name` = sch_name;
 	COMMIT;
+END //
+DELIMITER ;
+
+DROP PROCEDURE IF EXISTS insert_new_regex;
+DELIMITER //
+CREATE PROCEDURE insert_new_regex (
+	IN u_id INT,
+	IN regex VARCHAR(100),
+	IN sample_inp VARCHAR(100),
+	OUT r_id INT
+) MODIFIES SQL DATA BEGIN
+	START TRANSACTION;
+		IF NOT EXISTS (SELECT * FROM users WHERE `id` = u_id) THEN
+			SET r_id = -1;
+		ELSE
+			INSERT INTO `regexes` (
+				`author_id`,
+				`regex`,
+				`sample_input`
+			) VALUES (
+				u_id,
+				regex,
+				sample_inp
+			);
+			
+			SET r_id = LAST_INSERT_ID();
+		END IF;
+	COMMIT;
+END //
+DELIMITER ;
+
+DROP PROCEDURE IF EXISTS update_existing_regex;
+DELIMITER //
+CREATE PROCEDURE update_existing_regex (
+	IN regex_id INT,
+	IN u_id INT,
+	IN new_regex VARCHAR(100),
+	IN new_sample_input VARCHAR(100),
+	OUT did_err BOOLEAN
+) MODIFIES SQL DATA BEGIN
+	IF NOT EXISTS (SELECT * FROM regexes WHERE `author_id` = u_id AND `r_id` = regex_id) THEN
+		SET did_err = TRUE;
+	ELSE
+		SET did_err = FALSE;
+		UPDATE `regexes` SET `sampe_input` = new_sample_input, `regex` = new_regex WHERE `r_id` = r_id;
+	END IF;
 END //
 DELIMITER ;

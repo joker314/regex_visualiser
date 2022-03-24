@@ -7,6 +7,7 @@ import {databasePromise, MYSQL_COMMON_SETTINGS} from './dbEngine.js'
 
 import {User} from './user.js'
 import {Institution} from './institution.js'
+import {Regex} from './regex.js'
 
 // Port to use if no PORT environment variable set (e.g. in dev environments)
 const DEFAULT_PORT = 8000
@@ -43,6 +44,37 @@ app.use(session({
 }))
 
 app.use(express.urlencoded({extended: false}))
+
+const UNEXPECTED_SERVER_ERROR = "The server experienced an unexpected error when processing your registration request. Try again later."
+
+/**
+ * This is a higher order function which makes sure that sensitive information isn't accidentally
+ * disclosed through error messages, while still ensuring helpful errors are passed along to the user.
+ */
+function errorWrapper (requestHandler, isJSON = false) {
+	// Helper function which will convert the error to JSON if
+	// the parameter to the outer function requested it.
+	function formatError (error) {
+		if (isJSON) {
+			return JSON.stringify({error})
+		} else {
+			return error
+		}
+	}
+	
+	return async (req, res) => {
+		try {
+			await requestHandler(req, res)
+		catch (error) {
+			if (error.name === 'ClientError') {
+				res.status(400).send(formatError(error.message))
+			} else {
+				console.error(error)
+				res.status(500).send(formatError(UNEXPECTED_SERVER_ERROR))
+			}
+		}
+	}
+}
 
 /**
  * If we're in production, but for some reason we're not using HTTPS
@@ -98,6 +130,23 @@ app.post('/api/institutions/add', async (req, res) => {
 	console.log("The POST body is", req.body)
 	console.log("Adding", req.body.name)
 	res.send(await Institution.add(connection, req.body.name))
+})
+
+app.post('/api/regex/add', async (req, res) => {
+	if (req.sessionUser) {
+		res.send(await Regex.add(
+			connection,
+			req.sessionUser.id,
+			req.body.regex,
+			req.body.sample_input
+		))
+	} else {
+		req.status(400).send(
+			JSON.stringify({
+				error: "You are not logged in anymore so cannot save the regular expression to the server."
+			})
+		)
+	}
 })
 
 app.get('/logout', async (req, res) => {
