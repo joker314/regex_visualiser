@@ -9,6 +9,8 @@ import {User} from './user.js'
 import {Institution} from './institution.js'
 import {Regex} from './regex.js'
 
+import {ClientError} from './clienterror.js'
+
 // Port to use if no PORT environment variable set (e.g. in dev environments)
 const DEFAULT_PORT = 8000
 
@@ -65,8 +67,7 @@ function errorWrapper (requestHandler, isJSON = false) {
 	return async (req, res) => {
 		try {
 			await requestHandler(req, res)
-		}
-		catch (error) {
+		} catch (error) {
 			if (error.name === 'ClientError') {
 				res.status(400).send(formatError(error.message))
 			} else {
@@ -145,6 +146,20 @@ app.post('/api/regex/add', errorWrapper(async (req, res) => {
 		throw new ClientError("You are not logged in anymore so cannot save the regular expression to the server.")
 	}
 }, true))
+
+app.post('/api/regex/edit', errorWrapper(async (req, res) => {
+	if (req.sessionUser) {
+		res.send(await Regex.edit(
+			connection,
+			req.sessionUser.id,
+			req.body.regex_id,
+			req.body.regex,
+			req.body.sample_input
+		))
+	} else {
+		throw new ClientError("You are not logged in anymore, so you can't save the new version of the regular expression to the server")
+	}
+}))
 
 app.get('/logout', async (req, res) => {
 	// TODO: security!! make this POST with CSRF protection

@@ -60,7 +60,8 @@ CREATE TABLE IF NOT EXISTS `classrooms` (
 CREATE TABLE IF NOT EXISTS `classroom_memberships` (
 	`user_id` INT NOT NULL,
 	`class_id` INT NOT NULL,
-	PRIMARY KEY (`user_id`, `class_id`)
+	PRIMARY KEY (`user_id`, `class_id`),
+	FOREIGN KEY (`user_id`) REFERENCES `users`(`id`)
 );
 
 -- Stored procedures
@@ -246,11 +247,13 @@ CREATE PROCEDURE update_existing_regex (
 	IN new_sample_input VARCHAR(100),
 	OUT did_err BOOLEAN
 ) MODIFIES SQL DATA BEGIN
+	START TRANSACTION;
 	IF NOT EXISTS (SELECT * FROM regexes WHERE `author_id` = u_id AND `r_id` = regex_id) THEN
 		SET did_err = TRUE;
 	ELSE
 		SET did_err = FALSE;
-		UPDATE `regexes` SET `sampe_input` = new_sample_input, `regex` = new_regex WHERE `r_id` = r_id;
+		UPDATE `regexes` SET `sample_input` = new_sample_input, `regex` = new_regex WHERE `r_id` = r_id;
 	END IF;
+	COMMIT;
 END //
 DELIMITER ;

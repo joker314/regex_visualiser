@@ -1,3 +1,5 @@
+import {ClientError} from './clienterror.js'
+
 export class Regex {
 	constructor (dbEngine, userID, regexID) {
 		this.dbEngine = dbEngine
@@ -21,6 +23,26 @@ export class Regex {
 		
 		return JSON.stringify({
 			id: idOrErrorCode 
+		})
+	}
+	
+	static async edit (dbEngine, userID, regexID, newRegex, newSampleInput) {
+		const [results, fields] = await dbEngine.run(
+			"CALL update_existing_regex(?, ?, ?, ?, @did_error); SELECT @did_error;",
+			regexID,
+			userID,
+			newRegex,
+			newSampleInput
+		)
+		
+		const didError = results[1][0]["@did_error"]
+		
+		if (didError) {
+			throw new ClientError("There was a problem saving the regular expression, perhaps because you're not logged in to the correct account?")
+		}
+		
+		return JSON.stringify({
+			success: true
 		})
 	}
 }
