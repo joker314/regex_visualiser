@@ -159,7 +159,7 @@ app.post('/api/regex/edit', errorWrapper(async (req, res) => {
 	} else {
 		throw new ClientError("You are not logged in anymore, so you can't save the new version of the regular expression to the server")
 	}
-}))
+}, true))
 
 app.get('/logout', async (req, res) => {
 	// TODO: security!! make this POST with CSRF protection
