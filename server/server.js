@@ -160,6 +160,7 @@ app.post('/login', errorWrapper(async (req, res) => {
 		req.body.password
 	)
 
+	req.session.userID = signedInUser.id
 	res.redirect('/info')
 }))
 
