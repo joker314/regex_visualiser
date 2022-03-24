@@ -65,6 +65,7 @@ function errorWrapper (requestHandler, isJSON = false) {
 	return async (req, res) => {
 		try {
 			await requestHandler(req, res)
+		}
 		catch (error) {
 			if (error.name === 'ClientError') {
 				res.status(400).send(formatError(error.message))
