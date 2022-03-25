@@ -223,6 +223,14 @@ app.get('/my_regexes', async (req, res) => {
 	}
 })
 
+app.get('/my_assignments', async (req, res) => {
+	if (req.sessionUser?.isTeacher) {
+		await req.sessionUser.renderAssignments()
+	} else {
+		res.send("Not logged in as teacher")
+	}
+})
+
 app.get('/logout', async (req, res) => {
 	// TODO: security!! make this POST with CSRF protection
 	// and make all the other POSTs have CSRF protection
