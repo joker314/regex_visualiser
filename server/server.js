@@ -177,6 +177,7 @@ app.post('/api/regex/remove', errorWrapper(async (req, res) => {
 app.post('/api/homework/create', errorWrapper(async (req, res) => {
 	if (req.sessionUser) {
 		res.send(await Homework.create(
+			connection,
 			req.sessionUser.id,
 			req.body.assignment_name
 		))
