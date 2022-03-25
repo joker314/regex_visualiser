@@ -4,6 +4,7 @@ import express from 'express'
 import session from 'express-session'
 import createSessionStore from 'express-mysql-session'
 import {databasePromise, MYSQL_COMMON_SETTINGS} from './dbEngine.js'
+import ejs from 'ejs'
 
 import {User} from './user.js'
 import {Institution} from './institution.js'
@@ -121,6 +122,28 @@ app.get('/info', async (req, res) => {
 	} else {
 		res.send("Logged out")
 	}
+})
+
+app.get('/profile', async (req, res) => {
+	if (!req.sessionUser) {
+		res.redirect('/login.html')
+	}
+	
+	// TODO: parametarise file names is in the markscheme...
+	const templateFile = req.sessionUser.isTeacher ? 'client/views/teacher_profile.ejs' : 'client/views/student_profile.ejs'
+	
+	ejs.renderFile(templateFile, {user: req.sessionUser}, (error, htmlString) => {
+		if (error) {
+			console.error(error)
+			res.status(500).send("There was a problem showing your profile. Try again later")
+		} else {
+			res.send(htmlString)
+		}
+	})
+})
+
+app.get('/regex', (req, res) => {
+	
 })
 
 app.get('/api/institutions/search', async (req, res) => {

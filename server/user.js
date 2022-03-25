@@ -30,6 +30,7 @@ export class User {
 	constructor (dbEngine, id, username, firstName, lastName, canChangeName, isTeacher, teacherID, joinDate = new Date()) {
 		this.dbEngine = dbEngine,
 		this.id = id
+		this.username = username
 		this.firstName = firstName
 		this.lastName = lastName
 		this.canChangeName = canChangeName

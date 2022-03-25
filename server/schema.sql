@@ -37,7 +37,7 @@ CREATE TABLE `students` (
 	`teacher_id` INT NOT NULL,
 	PRIMARY KEY (`id`),
 	FOREIGN KEY (`id`) REFERENCES `users`(`id`) ON DELETE CASCADE,
-	FOREIGN KEY (`teacher_id`) REFERENCES `teachers`(`id`) -- don't do ON DELETE CASCADE since students should not disappear when a teacher is removed
+	FOREIGN KEY (`teacher_id`) REFERENCES `teachers`(`id`) ON DELETE CASCADE
 );
 
 CREATE TABLE IF NOT EXISTS `regexes` (
