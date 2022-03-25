@@ -8,7 +8,6 @@ import {databasePromise, MYSQL_COMMON_SETTINGS} from './dbEngine.js'
 import {User} from './user.js'
 import {Institution} from './institution.js'
 import {Regex} from './regex.js'
-import {Homework} from './classroom.js' // TODO: rename the file and then this import
 
 import {ClientError} from './clienterror.js'
 
