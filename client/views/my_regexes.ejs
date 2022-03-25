@@ -1,0 +1,14 @@
+<h1>Your regexes</h1>
+
+<table>
+	<% rows.forEach(row => { %>
+		<tr>
+			<td>
+				<%= row.regex %>
+			</td>
+			<td>
+				<%= row.sample_input %>
+			</td>
+		</tr>
+	<% }); %>
+</table>

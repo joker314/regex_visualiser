@@ -1,5 +1,21 @@
 import bcrypt from 'bcrypt'
+import ejs from 'ejs'
 import {ClientError} from './clienterror.js'
+
+function htmlEscape (str) {
+	const translationTable = {
+		"<": "&lt;",
+		">": "&gt;",
+		"&": "&amp;"
+	}
+	
+	let sanitisedStr = str
+	for (let [original, safe] of Object.entries(translationTable)) {
+		sanitisedStr.replaceAll(original, safe)
+	}
+	
+	return sanitisedStr
+}
 
 // TODO: might be able to use SELECT statements in stored procedures directly,
 // without doing a subsequent SELECT.
@@ -216,6 +232,27 @@ export class User {
 		
 		// TODO: create student and teacher objects so we don't have to specify null everywhere
 		return new User(dbEngine, idOrErrorCode, username, preferredName, null, null, true, joinDate)
+	}
+	
+	/**
+	 * Returns an HTML document containing a table of all the regular expressions
+	 * by this user
+	 */
+	async renderRegexes () {
+		const [results, fields] = await this.dbEngine.run(
+			"SELECT r_id, regex, sample_input FROM regexes WHERE author_id = ? ORDER BY r_id;",
+			this.id
+		)
+		
+		return await new Promise((resolve, reject) => {
+			ejs.renderFile("client/views/my_regexes.ejs", {rows: results}, ((error, htmlString) => {
+				if (error) {
+					reject(error)
+				} else {
+					resolve(htmlString)
+				}
+			}))
+		})
 	}
 	
 	async remove () {
