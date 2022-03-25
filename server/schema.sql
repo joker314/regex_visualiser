@@ -254,7 +254,7 @@ CREATE PROCEDURE update_existing_regex (
 		SET did_err = TRUE;
 	ELSE
 		SET did_err = FALSE;
-		UPDATE `regexes` SET `sample_input` = new_sample_input, `regex` = new_regex WHERE `r_id` = r_id;
+		UPDATE `regexes` SET `sample_input` = new_sample_input, `regex` = new_regex WHERE `r_id` = regex_id;
 	END IF;
 	COMMIT;
 END //
