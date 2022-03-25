@@ -55,11 +55,11 @@ export class Regex {
 		
 		const errorCode = results[1][0]["@err_code"]
 		
-		if (errCode === -1) {
+		if (errorCode === -1) {
 			throw new ClientError("The author of this regular expression is not your student, so you're not allowed to delete it")
 		}
 		
-		if (errCode === -2) {
+		if (errorCode === -2) {
 			throw new ClientError("You can't delete somebody else's regular expression since you're a student")
 		}
 		

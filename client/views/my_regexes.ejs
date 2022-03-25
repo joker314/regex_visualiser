@@ -2,13 +2,36 @@
 
 <table>
 	<% rows.forEach(row => { %>
-		<tr>
+		<tr id="row-<%= row.r_id %>">
 			<td>
 				<%= row.regex %>
 			</td>
 			<td>
 				<%= row.sample_input %>
 			</td>
+			<td>
+				<button onclick="removeRow(<%= row.r_id %>)">Delete</button>
+			</td>
 		</tr>
 	<% }); %>
 </table>
+
+<script>
+function removeRow (regexID) {
+	const removeRequest = new XMLHttpRequest()
+	
+	removeRequest.open("POST", "/api/regex/remove")
+	removeRequest.setRequestHeader("Content-type", "application/x-www-form-urlencoded")
+	removeRequest.onreadystatechange = () => {
+		if (removeRequest.readyState === 4) {
+			if (removeRequest.status === 200) {
+				document.querySelector("#row-" + regexID).remove()
+			} else {
+				alert(JSON.parse(removeRequest.responseText).error)
+			}
+		}
+	}
+	
+	removeRequest.send("regex_id=" + regexID.toString())
+}
+</script>
