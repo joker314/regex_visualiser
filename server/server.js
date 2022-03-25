@@ -8,6 +8,7 @@ import {databasePromise, MYSQL_COMMON_SETTINGS} from './dbEngine.js'
 import {User} from './user.js'
 import {Institution} from './institution.js'
 import {Regex} from './regex.js'
+import {Homework} from './classroom.js' // TODO: rename the file and then this import
 
 import {ClientError} from './clienterror.js'
 
@@ -160,6 +161,58 @@ app.post('/api/regex/edit', errorWrapper(async (req, res) => {
 		throw new ClientError("You are not logged in anymore, so you can't save the new version of the regular expression to the server")
 	}
 }, true))
+
+app.post('/api/regex/remove', errorWrapper(async (req, res) => {
+	if (req.sessionUser) {
+		res.send(await Regex.remove(
+			connection,
+			req.sessionUser.id,
+			req.body.regex_id
+		))
+	} else {
+		throw new Error("You need to log in again in order to delete the regular expression")
+	}
+}, true))
+
+app.post('/api/homework/create', errorWrapper(async (req, res) => {
+	if (req.sessionUser) {
+		res.send(await Homework.create(
+			req.sessionUser.id,
+			req.body.assignment_name
+		))
+	} else {
+		throw new ClientError("You need to be logged in as a teacher to create homeworks")
+	}
+}, true))
+
+app.post('/api/homework/submit', errorWrapper(async (req, res) => {
+	if (req.sessionUser) {
+		res.send(await new Homework(connection, req.body.homework_id).submitRegex(
+			req.sessionUser.id,
+			req.body.regex_id
+		))
+	} else {
+		throw new ClientError("You need to be logged in to submit a regular expression as homework")
+	}
+}, true))
+
+// TODO: abstract away all checking for whether somebody's logged in
+app.post('/api/homework/remove', errorWrapper(async (req, res) => {
+	if (req.sessionUser) {
+		res.send(await new Homework(connection, req.body.homework_id).remove(req.sessionUser.id))
+	} else {
+		throw new ClientError("You need to be logged in to remove a homework")
+	}		
+}, true))
+
+app.post('/accountDelete', async (req, res) => {
+	if (req.sessionUser) {
+		await req.sessionUser.remove()
+		req.session.destroy(() => res.redirect('/info'))
+	} else {
+		res.redirect('/info')
+	}
+})
 
 app.get('/logout', async (req, res) => {
 	// TODO: security!! make this POST with CSRF protection

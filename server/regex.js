@@ -38,7 +38,29 @@ export class Regex {
 		const didError = results[1][0]["@did_error"]
 		
 		if (didError) {
-			throw new ClientError("There was a problem saving the regular expression, perhaps because you're not logged in to the correct account?")
+			throw new ClientError("There was a problem saving the regular expression. You might have become logged out, or the regular expression has been deleted. Try creating a copy instead?")
+		}
+		
+		return JSON.stringify({
+			success: true
+		})
+	}
+	
+	static async remove (dbEngine, userID, regexID) {
+		const [results, fields] = await dbEngine.run(
+			"CALL remove_existing_regex(?, ?, @err_code); SELECT @err_code;",
+			userID,
+			regexID
+		)
+		
+		const errorCode = results[1][0]["@err_code"]
+		
+		if (errCode === -1) {
+			throw new ClientError("The author of this regular expression is not your student, so you're not allowed to delete it")
+		}
+		
+		if (errCode === -2) {
+			throw new ClientError("You can't delete somebody else's regular expression since you're a student")
 		}
 		
 		return JSON.stringify({

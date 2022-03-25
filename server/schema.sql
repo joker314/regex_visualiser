@@ -2,7 +2,7 @@ CREATE DATABASE IF NOT EXISTS `sessions`; -- library will populate this database
 CREATE DATABASE IF NOT EXISTS `regex_visualiser`;
 USE `regex_visualiser`;
 
-DROP TABLE IF EXISTS `users`, `institutions`, `teachers`, `students`, `regexes`, `classrooms`, `classroom_memberships`;
+DROP TABLE IF EXISTS `users`, `institutions`, `teachers`, `students`, `regexes`, `classrooms`, `classroom_memberships`, `homework_submissions`, `homeworks`;
 CREATE TABLE IF NOT EXISTS `users` (
 	`id` INT NOT NULL AUTO_INCREMENT,
 	`hashed_password` VARCHAR(60) NOT NULL,
@@ -20,13 +20,12 @@ CREATE TABLE IF NOT EXISTS `institutions` (
 	UNIQUE KEY (`school_name`)
 );
 
-
 CREATE TABLE IF NOT EXISTS `teachers` (
 	`id` INT NOT NULL, -- not auto increment - foreign key with users.id as parent
 	`school_affiliation_id` INT, -- a teacher doesn't have to immediately specify their school, so the 'NOT NULL' constraint is omitted
 	`name` VARCHAR(70), -- teachers might be more flexible with their names, e.g. 'Mr T'
 	PRIMARY KEY (`id`),
-	FOREIGN KEY (`id`) REFERENCES `users`(`id`),
+	FOREIGN KEY (`id`) REFERENCES `users`(`id`) ON DELETE CASCADE,
 	FOREIGN KEY (`school_affiliation_id`) REFERENCES `institutions`(`i_id`)
 );
 
@@ -37,7 +36,7 @@ CREATE TABLE `students` (
 	`can_change_name` BOOLEAN NOT NULL,
 	`teacher_id` INT NOT NULL,
 	PRIMARY KEY (`id`),
-	FOREIGN KEY (`id`) REFERENCES `users`(`id`),
+	FOREIGN KEY (`id`) REFERENCES `users`(`id`) ON DELETE CASCADE,
 	FOREIGN KEY (`teacher_id`) REFERENCES `teachers`(`id`) -- don't do ON DELETE CASCADE since students should not disappear when a teacher is removed
 );
 
@@ -50,18 +49,21 @@ CREATE TABLE IF NOT EXISTS `regexes` (
 	FOREIGN KEY (`author_id`) REFERENCES `users`(`id`) ON DELETE CASCADE
 );
 
-CREATE TABLE IF NOT EXISTS `classrooms` (
+CREATE TABLE IF NOT EXISTS `homeworks` (
 	`id` int NOT NULL AUTO_INCREMENT,
+	`owner_id` INT,
 	`name` VARCHAR(60),
 	`created_at` DATETIME NOT NULL,
-	PRIMARY KEY (`id`)
+	PRIMARY KEY (`id`),
+	FOREIGN KEY (`owner_id`) REFERENCES `teachers`(`id`)
 );
 
-CREATE TABLE IF NOT EXISTS `classroom_memberships` (
-	`user_id` INT NOT NULL,
-	`class_id` INT NOT NULL,
-	PRIMARY KEY (`user_id`, `class_id`),
-	FOREIGN KEY (`user_id`) REFERENCES `users`(`id`)
+CREATE TABLE IF NOT EXISTS `homework_submissions` (
+	`r_id` INT NOT NULL,
+	`h_id` INT NOT NULL,
+	PRIMARY KEY (`r_id`, `h_id`),
+	FOREIGN KEY (`r_id`) REFERENCES `regexes`(`r_id`),
+	FOREIGN KEY (`h_id`) REFERENCES `homeworks`(`id`)
 );
 
 -- Stored procedures
@@ -255,5 +257,106 @@ CREATE PROCEDURE update_existing_regex (
 		UPDATE `regexes` SET `sample_input` = new_sample_input, `regex` = new_regex WHERE `r_id` = r_id;
 	END IF;
 	COMMIT;
+END //
+DELIMITER ;
+
+DROP PROCEDURE IF EXISTS remove_existing_regex;
+DELIMITER //
+CREATE PROCEDURE remove_existing_regex (
+	IN u_id INT,
+	IN r_id INT,
+	OUT err_code INT
+) MODIFIES SQL DATA BEGIN
+	START TRANSACTION;
+	IF EXISTS (SELECT * FROM `regexes` WHERE `author_id` = u_id AND `r_id` = r_id) THEN
+		-- Behaviour if it's deleting your own regular expression
+		DELETE FROM `regexes` WHERE `author_id` = u_id AND `r_id` = r_id;
+		SET err_code = 0;
+	ELSEIF EXISTS (SELECT * FROM `regexes` INNER JOIN `students` ON `students`.`id` = `regexes`.`author_id` WHERE `students`.`teacher_id` = u_id AND `regexes`.`r_id` = r_id) THEN
+		-- Behaviour if it's your teacher deleting
+		DELETE FROM `regexes` WHERE `r_id` = r_id;
+		SET err_code = 0;
+	ELSEIF EXISTS (SELECT * FROM `teachers` WHERE `teacher`.`id` = u_id) THEN
+		-- Teacher, but not your teacher
+		SET err_code = -1;
+	ELSE
+		-- Student, but not the one who created the regular expression
+		SET err_code = -2;
+	END IF;
+	COMMIT;
+END //
+DELIMITER ;
+
+DROP PROCEDURE IF EXISTS create_new_homework;
+DELIMITER //
+CREATE PROCEDURE create_new_homework (
+	IN u_id INT,
+	IN name VARCHAR(60),
+	IN created_at DATETIME,
+	OUT id_or_err_code INT
+) MODIFIES SQL DATA BEGIN
+	START TRANSACTION;
+	IF EXISTS (SELECT * FROM `teachers` WHERE `id` = u_id) THEN
+		INSERT INTO `homeworks` (`owner_id`, `name`, `created_at`) VALUES (u_id, name, created_at);
+		SET id_or_err_code = LAST_INSERT_ID();
+	ELSE
+		SET id_or_err_code = -1;
+	END IF;
+	COMMIT;
+END //
+DELIMITER ;
+
+DROP PROCEDURE IF EXISTS submit_homework;
+DELIMITER //
+CREATE PROCEDURE submit_homework (
+	IN u_id INT,
+	IN r_id INT,
+	IN h_id INT,
+	OUT err_code INT -- no need to return last insert ID since we will use regex id and homework id for that 
+) MODIFIES SQL DATA BEGIN
+	-- Check the regular expression belongs to the student trying to submit it
+	IF EXISTS (SELECT * FROM `regexes` INNER JOIN `students` ON `regexes`.`author_id` = `students`.`id` WHERE `regexes`.`r_id` = r_id AND `students`.`id` = u_id) THEN
+		-- Check the homework is owned by the student's teacher
+		SELECT teacher_id INTO @associated_teacher FROM students WHERE `id` = u_id;
+		IF EXISTS (SELECT * FROM `homeworks` WHERE `id` = h_id AND `owner_id` = id) THEN
+			INSERT INTO `homework_submissions` (`r_id`, `h_id`) VALUES (r_id, h_id);
+		ELSE
+			SET err_code = -1;
+		END IF;
+	ELSE
+		SET err_code = -2;
+	END IF;
+END //
+DELIMITER ;
+
+DROP PROCEDURE IF EXISTS remove_homework;
+DELIMITER //
+CREATE PROCEDURE remove_homework (
+	IN u_id INT,
+	IN h_id INT,
+	OUT did_err BOOLEAN
+) MODIFIES SQL DATA BEGIN
+	IF EXISTS (SELECT * FROM `homeworks` WHERE `owner_id` = u_id AND `id` = h_id) THEN
+		DELETE FROM `homeworks` WHERE `id` = h_id;
+		SET did_err = FALSE;
+	ELSE
+		SET did_err = TRUE;
+	END IF;
+END //
+DELIMITER ;
+
+DROP PROCEDURE IF EXISTS unsubmit_homework;
+DELIMITER //
+CREATE PROCEDURE unsubmit_homework (
+	IN u_id INT,
+	IN r_id INT,
+	IN h_id INT,
+	OUT err_code INT
+) MODIFIES SQL DATA BEGIN
+	IF EXISTS (SELECT * FROM `regexes` WHERE `owner_id` = u_id AND `r_id` = r_id) THEN
+		DELETE FROM `homework_submissions` WHERE `id` = h_id AND `r_id` = r_id;
+	ELSE
+		SET err_code = -1;
+	END IF;
 END //
 DELIMITER ;

@@ -217,6 +217,14 @@ export class User {
 		// TODO: create student and teacher objects so we don't have to specify null everywhere
 		return new User(dbEngine, idOrErrorCode, username, preferredName, null, null, true, joinDate)
 	}
+	
+	async remove () {
+		// No need for deleting from other tables because of cascade
+		await this.dbEngine.run(
+			"DELETE FROM `users` WHERE `id` = ?",
+			this.id
+		)
+	}
 }
 
 class Teacher extends User {
