@@ -174,38 +174,6 @@ app.post('/api/regex/remove', errorWrapper(async (req, res) => {
 	}
 }, true))
 
-app.post('/api/homework/create', errorWrapper(async (req, res) => {
-	if (req.sessionUser) {
-		res.send(await Homework.create(
-			connection,
-			req.sessionUser.id,
-			req.body.assignment_name
-		))
-	} else {
-		throw new ClientError("You need to be logged in as a teacher to create homeworks")
-	}
-}, true))
-
-app.post('/api/homework/submit', errorWrapper(async (req, res) => {
-	if (req.sessionUser) {
-		res.send(await new Homework(connection, req.body.homework_id).submitRegex(
-			req.sessionUser.id,
-			req.body.regex_id
-		))
-	} else {
-		throw new ClientError("You need to be logged in to submit a regular expression as homework")
-	}
-}, true))
-
-// TODO: abstract away all checking for whether somebody's logged in
-app.post('/api/homework/remove', errorWrapper(async (req, res) => {
-	if (req.sessionUser) {
-		res.send(await new Homework(connection, req.body.homework_id).remove(req.sessionUser.id))
-	} else {
-		throw new ClientError("You need to be logged in to remove a homework")
-	}		
-}, true))
-
 app.post('/accountDelete', async (req, res) => {
 	if (req.sessionUser) {
 		await req.sessionUser.remove()
@@ -220,14 +188,6 @@ app.get('/my_regexes', async (req, res) => {
 		res.send(await req.sessionUser.renderRegexes())
 	} else {
 		res.send("Not logged in")
-	}
-})
-
-app.get('/my_assignments', async (req, res) => {
-	if (req.sessionUser?.isTeacher) {
-		await req.sessionUser.renderAssignments()
-	} else {
-		res.send("Not logged in as teacher")
 	}
 })
 
